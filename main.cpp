@@ -53,6 +53,7 @@ void screen_r(const std::string& name) {
 	if (screens.find(name) != screens.end()) {
 		system("cls");
 		ScreenData screen = screens[name];
+		screen.currentLine++;
 		std::cout << "Process Name: " << screen.processName << "\n";
 		std::cout << "Current line: " << screen.currentLine << "/" << screen.totalLines << "\n";
 		std::cout << "Timestamp: " << screen.timestamp << "\n\n";
