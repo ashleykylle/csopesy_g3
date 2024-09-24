@@ -50,7 +50,7 @@ void initialize() {
 }
 
 void screen_r(const std::string& name) {
-	if (screens.find(name) != screens.end()) {
+	if (inScreen == false && (screens.find(name) != screens.end())) {
 		system("cls");
 		ScreenData screen = screens[name];
 		screen.currentLine++;
@@ -61,28 +61,34 @@ void screen_r(const std::string& name) {
 		std::cout << "Type 'exit' to go back to the main menu, '?' to view command list\n";
 		setColor(0x07);
 		inScreen = true;
+	} else if(inScreen == true){
+		std::cout << "Command not recognized.\n";
 	} else {
 		std::cout << "Screen '" << name << "' not found.\n";
 	}
 }
 
 void screen_s(const std::string& name) {
-	system("cls");
-	
-	ScreenData newScreen;
-    newScreen.processName = name;
-    newScreen.currentLine = 0;
-    newScreen.totalLines = 100;
-    newScreen.timestamp = getCurrentTimestamp();
+	if (inScreen == false) {
+		system("cls");
+		ScreenData newScreen;
+		newScreen.processName = name;
+		newScreen.currentLine = 0;
+		newScreen.totalLines = 100;
+		newScreen.timestamp = getCurrentTimestamp();
 
-    screens[name] = newScreen;
-    std::cout << "Process Name: " << newScreen.processName << "\n";
-	std::cout << "Current line: " << newScreen.currentLine << "/" << newScreen.totalLines << "\n";
-	std::cout << "Timestamp: " << newScreen.timestamp << "\n\n";
-	setColor(0x0E);
-	std::cout << "Type 'exit' to go back to the main menu, '?' to view command list\n";
-	setColor(0x07);
-	inScreen = true;
+		screens[name] = newScreen;
+		std::cout << "Process Name: " << newScreen.processName << "\n";
+		std::cout << "Current line: " << newScreen.currentLine << "/" << newScreen.totalLines << "\n";
+		std::cout << "Timestamp: " << newScreen.timestamp << "\n\n";
+		setColor(0x0E);
+		std::cout << "Type 'exit' to go back to the main menu, '?' to view command list\n";
+		setColor(0x07);
+		inScreen = true;
+	} else {
+		std::cout << "Command not recognized.\n";
+	}
+
 }
 
 void scheduler_test() {
@@ -128,8 +134,6 @@ void command_list() {
 	
 	if (inScreen) {
 		setColor(0x02);
-		std::cout << "'screen -r <screen name>' - load a screen\n";
-		std::cout << "'screen -s <screen name>' - create/save a screen\n";
 		std::cout << "'exit' - return to the main menu\n";
 		setColor(0x07);
 	} else {
