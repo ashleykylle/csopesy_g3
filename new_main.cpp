@@ -101,6 +101,7 @@ private:
     vector<vector<Process*>> processQueues;
     vector<Process*> finishedProcesses;
     mutex queueMutex;
+    mutex finishedMutex;
     atomic<bool> isRunning;
 
 public:
@@ -122,7 +123,7 @@ public:
                 {
                     lock_guard<mutex> guard(queueMutex);
                     if (!processQueues[coreId].empty()) {
-                        currentProcess = processQueues[coreId].back();
+                        currentProcess = processQueues[coreId].front();
                     }
                 }
 
@@ -135,7 +136,11 @@ public:
 
                     {
                         lock_guard<mutex> guard(queueMutex);
-                        processQueues[coreId].pop_back();
+                        processQueues[coreId].erase(processQueues[coreId].begin());
+                    }
+
+                    {
+                        lock_guard<mutex> guard(finishedMutex);
                         finishedProcesses.push_back(currentProcess);
                     }
                 } else {
@@ -268,7 +273,6 @@ void screen_ls(const FCFSScheduler& scheduler) {
     cout << "--------------------------------------\n\n";
 }
 
-
 void scheduler_test() {
 	cout << "'scheduler-test' command recognized. Doing something.\n";
 }
@@ -350,7 +354,7 @@ int main() {
     int assignedCore = 0;
 	FCFSScheduler scheduler(numCores);
 	
-	for (int i = 10; i >= 1; --i) {
+	for (int i = 1; i <= 10; ++i) {
         scheduler.addProcess(new Process("Process " + to_string(i), i, 100), assignedCore);
         assignedCore = (assignedCore + 1) % numCores;
     }
@@ -401,4 +405,3 @@ int main() {
 
 	return 0;
 }
-
