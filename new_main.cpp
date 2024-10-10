@@ -9,6 +9,7 @@
 #include <chrono>
 #include <vector>
 #include <mutex>
+#include <algorithm>
 
 using namespace std;
 
@@ -25,6 +26,7 @@ class Process {
 private:
     string name;
     int id;
+    int coreId;
     int totalInstructions;
     int remainingInstructions;
     ofstream outputFile;
@@ -68,6 +70,10 @@ public:
         isFinished = true;
         completionTimestamp = getCurrentTimestamp();
     }
+    
+    void setCoreId(int core) {
+        coreId = core;
+    }
 
     bool hasFinished() const {
         return remainingInstructions == 0;
@@ -92,6 +98,10 @@ public:
     int getTotalInstructions() const {
         return totalInstructions;
     }
+
+    int getCoreId() const {
+        return coreId;
+    }
 };
 
 class FCFSScheduler {
@@ -110,6 +120,7 @@ public:
     void addProcess(Process* process, int core) {
         if (core >= 0 && core < numCores) {
             lock_guard<mutex> guard(queueMutex);
+            process->setCoreId(core);
             processQueues[core].push_back(process);
         }
     }
@@ -255,16 +266,28 @@ void screen_ls(const FCFSScheduler& scheduler) {
     
     cout << "Running processes:\n";
     auto processQueues = scheduler.getProcessQueues();
-    for (size_t core = 0; core < processQueues.size(); ++core) {
-        for (Process* process : processQueues[core]) {
-            cout << process->getName() << "   (" << getCurrentTimestamp() << ")   Core: " << core
-                 << "   " << process->getTotalInstructions() - process->getRemainingInstructions() 
-                 << " / " << process->getTotalInstructions() << "\n";
+    
+    vector<Process*> allProcesses;
+    for (const auto& coreQueue : processQueues) {
+        for (Process* process : coreQueue) {
+            allProcesses.push_back(process);
         }
+    }
+
+    sort(allProcesses.begin(), allProcesses.end(), [](Process* a, Process* b) {
+        return a->getId() < b->getId();
+    });
+
+    for (Process* process : allProcesses) {
+        cout << process->getName() << "   (" << getCurrentTimestamp() << ")   Core: " 
+             << process->getCoreId()
+             << "   " << process->getTotalInstructions() - process->getRemainingInstructions() 
+             << " / " << process->getTotalInstructions() << "\n";
     }
 
     cout << "\nFinished processes:\n";
     auto finishedProcesses = scheduler.getFinishedProcesses();
+    
     for (Process* process : finishedProcesses) {
         cout << process->getName() << "   (" << process->getCompletionTimestamp() << ")   Finished   "
              << process->getTotalInstructions() << " / " << process->getTotalInstructions() << "\n";
@@ -272,6 +295,7 @@ void screen_ls(const FCFSScheduler& scheduler) {
 
     cout << "--------------------------------------\n\n";
 }
+
 
 void scheduler_test() {
 	cout << "'scheduler-test' command recognized. Doing something.\n";
