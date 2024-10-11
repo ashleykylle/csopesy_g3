@@ -416,6 +416,7 @@ int main() {
                 cout << "The scheduler is already running!\n";
             } else {
                 schedulerThread = thread(&FCFSScheduler::runScheduler, &scheduler);
+		schedulerThread.detach();
             }
 		} else if (cmd == "clear") {
 			clear();
