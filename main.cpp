@@ -1,90 +1,284 @@
 #include <iostream>
-#include <vector>
-#include <thread>
-#include <chrono>
-#include <string>
 #include <fstream>
-#include <ctime>
+#include <sstream>
+#include <windows.h>
+#include <iomanip>
+#include <map>
+#include <thread>
+#include <string>
+#include <atomic>
+#include <chrono>
+#include <vector>
+#include <mutex>
+#include <algorithm>
+#include "header/process.h"
+#include "header/scheduler.h"
+#include "header/config.h"
+#include "header/utils.h"
 
-class Process {
+using namespace std;
 
-private:
-    int id;
-    int remainingLines;
+bool isInitialized = false;
+bool schedulerInitialized = false;
+bool schedulerRunning = false;
+bool inScreen = false;
 
-public:
-    Process(int processId, int lines): id(processId), remainingLines(lines) {}
-
-    void executeLine(int coreId) {
-        if (remainingLines > 0){
-            std::time_t now = std::time(nullptr);
-            std::tm timeInfo;
-            localtime_s(&timeInfo, &now);
-            char buffer[30];
-            std::strftime(buffer, sizeof(buffer), "%m/%d/%Y %I:%M:%S%p", &timeInfo); // (MM/DD/YYYY HH:MM:SSAM/PM)
-
-            std::ofstream logFile("process_" + std::to_string(id) + ".txt", std::ios::app); // txt file
-            logFile << "(" << buffer << ")  Core:" << coreId << " \"Hello world from screen_" << id << "!\"\n";
-            logFile.close();
-
-            --remainingLines;
-        }
+void header() {
+	setColor(0x07);
+	cout << "  ____ ____  ____  _____ _____ ____ __   __     \n";
+	cout << " / __/  ___|/ __ `|  _  ` ____/ ___`  ` / /     \n";
+	cout << "| |   `___ ` |  | | |_| |  __|`___ ` `   /      \n";
+	cout << "| |__ ___) | |__| | ___/| |___ ___) | | |       \n";
+	cout << " `___` ____/`____/|_|   |_____|___ /  |_|       \n";
+	cout << " -----------------------------------------------\n";
+	
+	setColor(0x02);
+	cout << "Hello, Welcome to CSOPESY commandline!\n";
+	setColor(0x0E);
+    if (!isInitialized) {
+        cout << "Type 'initialize' to initialize the processor, 'exit' to quit\n";
+    } else {
+        cout << "Type 'exit' to quit, 'clear' to clear the screen, '?' to view command list\n";
     }
+	setColor(0x07);
+}
 
-    bool isFinished() const {
-        return remainingLines == 0;
+void clear() {
+	cout << "'clear' command recognized. Clearing screen.\n";
+	system("cls");
+	header();
+}
+
+void initialize(Config& config) {
+    if (readConfig("config.txt", config)) {
+        cout << "'initialize' command recognized. Initializing the processor configuration.\n";
+        isInitialized = true;
+        clear();
     }
-    int getId() const {
-        return id;
-    }
-};
+}
 
+void command_list() {
+	setColor(0x0E);
+	cout << "\nAvailable Commands:\n";
+	
+	if (inScreen) {
+		setColor(0x02);
+        cout << "'process-smi' - view process info\n";
+		cout << "'exit' - return to the main menu\n";
+		setColor(0x07);
+	} else {
+		setColor(0x02);
+		cout << "'screen -r <screen name>' - load a screen\n";
+		cout << "'screen -s <screen name>' - create/save a screen\n";
+		cout << "'screen -ls' - show all running & finished processes\n";
+		cout << "'scheduler-test' - generate dummy processes\n";
+		cout << "'scheduler-stop' - stop generating processes\n";
+		cout << "'report-util' - saves the process info in 'screen-ls' in a log file\n";
+		cout << "'clear' - clear the screen\n";
+		cout << "'exit' - exit the terminal\n\n";
+		setColor(0x07);
+	}
+}
 
-class FCFS_Scheduler {
+void screen_ls(Scheduler* scheduler) {
+    cout << "\n--------------------------------------\n";
 
-private:
-    int numCores;
-    std::vector<Process> allProcesses;
+    if (schedulerInitialized) {
+        auto processQueues = scheduler->getProcessQueues();
 
-public:
-    FCFS_Scheduler(int cores): numCores(cores) {}
-
-    void addProcess(const Process& process) {
-        allProcesses.push_back(process);  // push process at the very back (FCFS)
-    }
-
-    void runScheduler() {
-        for (Process& process : allProcesses) {
-            std::thread coreThreads[4]; // 4 threads for each core
-
-            for (int core = 0; core < numCores; ++core) {
-                coreThreads[core] = std::thread(&FCFS_Scheduler::coreWorker, this, core, std::ref(process)); 
+        if (processQueues.empty()) {
+            cout << "No running processes!\n";
+        } else {
+            cout << "Running processes:\n";
+            
+            vector<Process*> allProcesses;
+            for (const auto& coreQueue : processQueues) {
+                for (Process* process : coreQueue) {
+                    allProcesses.push_back(process);
+                }
             }
 
-            for (int core = 0; core < numCores; ++core) {
-                coreThreads[core].join();
+            sort(allProcesses.begin(), allProcesses.end(), [](Process* a, Process* b) {
+                return a->getId() < b->getId();
+            });
+
+            for (Process* process : allProcesses) {
+                cout << process->getName() << "   (" << getCurrentTimestamp() << ")   Core: " 
+                    << process->getCoreId()
+                    << "   " << process->getTotalInstructions() - process->getRemainingInstructions() 
+                    << " / " << process->getTotalInstructions() << "\n";
+            }
+        }
+
+        auto finishedProcesses = scheduler->getFinishedProcesses();
+
+        if (finishedProcesses.empty()) {
+            cout << "\nNo finished processes!\n";
+        } else {
+            cout << "\nFinished processes:\n";
+            
+            for (Process* process : finishedProcesses) {
+                cout << process->getName() << "   (" << process->getCompletionTimestamp() << ")   Finished   "
+                    << process->getTotalInstructions() << " / " << process->getTotalInstructions() << "\n";
+            }
+        }
+    } else {
+        cout << "No running processes!\n";
+        cout << "\nNo finished processes!\n";
+    }
+
+    cout << "--------------------------------------\n\n";
+}
+
+void scheduler_test(Scheduler*& scheduler, Config& config, int& cpuCycles) {    
+    if (config.scheduler == "rr") {
+        scheduler = new RoundRobinScheduler(config.numCpu, config.quantumCycles);
+    } else if (config.scheduler == "fcfs") {
+        scheduler = new FCFSScheduler(config.numCpu);
+    }
+
+    schedulerInitialized = true;
+    schedulerRunning = true;
+    static int currentCore = 0;
+    int processId = 1;
+
+    while (schedulerRunning) {
+        if (cpuCycles % config.batchProcessFreq == 0) {
+            int assignedCore = currentCore++ % config.numCpu;
+            string processName = "P" + to_string(processId);
+
+            scheduler->addProcess(new Process(processName, processId, config.minIns + (rand() % (config.maxIns - config.minIns + 1))), assignedCore);
+            processId++;
+        }
+        this_thread::sleep_for(chrono::milliseconds(config.delayPerExec));
+        cpuCycles++;
+    }
+}
+
+void scheduler_stop() {
+	cout << "'scheduler-stop' command recognized. Process generation has stopped.\n";
+    schedulerRunning = false;
+}
+
+void report_util(Scheduler* scheduler) {
+    cout << "\n'report-util' command recognized. Generating log file...\n";
+
+    ofstream logFile("csopesy-log.txt");
+    if (!logFile.is_open()) {
+        cout << "Failed to open log file.\n";
+        return;
+    }
+
+    logFile << "--------------------------------------\n";
+    
+    if (schedulerInitialized) {
+        auto processQueues = scheduler->getProcessQueues();
+
+        if (processQueues.empty()) {
+            logFile << "No running processes!\n";
+        } else {
+            logFile << "Running processes:\n";
+            
+            vector<Process*> allProcesses;
+            for (const auto& coreQueue : processQueues) {
+                for (Process* process : coreQueue) {
+                    allProcesses.push_back(process);
+                }
             }
 
-            std::cout << "process_" << process.getId() << " finished.\n";
+            sort(allProcesses.begin(), allProcesses.end(), [](Process* a, Process* b) {
+                return a->getId() < b->getId();
+            });
+
+            for (Process* process : allProcesses) {
+                logFile << process->getName() << "   (" << getCurrentTimestamp() << ")   Core: " 
+                        << process->getCoreId()
+                        << "   " << process->getTotalInstructions() - process->getRemainingInstructions() 
+                        << " / " << process->getTotalInstructions() << "\n";
+            }
         }
-    }
-    void coreWorker(int coreId, Process& process) {
-        while (!process.isFinished()) {
-            process.executeLine(coreId);  
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+        auto finishedProcesses = scheduler->getFinishedProcesses();
+
+        if (finishedProcesses.empty()) {
+            logFile << "\nNo finished processes!\n";
+        } else {
+            logFile << "\nFinished processes:\n";
+            
+            for (Process* process : finishedProcesses) {
+                logFile << process->getName() << "   (" << process->getCompletionTimestamp() << ")   Finished   "
+                        << process->getTotalInstructions() << " / " << process->getTotalInstructions() << "\n";
+            }
         }
+    } else {
+        logFile  << "No running processes!\n";
+        logFile  << "\nNo finished processes!\n";
     }
-};
+
+    logFile << "--------------------------------------";
+    logFile.close();
+    cout << "Report generated at C:/csopesy-log.txt!\n\n";
+}
+
+void exit() {
+	cout << "'exit' command recognized. Exiting program.\n";
+    exit(0);
+}
 
 int main() {
-    FCFS_Scheduler scheduler(4);  //4 cores
+	system("cls");
+	header();
 
-    // create 10 processes each with 100 instructions
-    for (int i = 1; i <= 10; ++i) {
-        scheduler.addProcess(Process(i, 100));
-    }
+	Config config;
+    Scheduler* scheduler = nullptr;
+    string input;
+    int cpuCycles = 0;
+    thread schedulerThread;
+	
+	while (true) {
+		cout << "Enter command: ";
+		getline(cin, input);
+		pair<string, string> parsed = parseCommand(input);
+		string cmd = parsed.first;
+		string arg = parsed.second;
+		
+        if (!isInitialized) {
+            if (cmd == "initialize") {
+			    initialize(config);
+            } else if (cmd == "exit") {
+                exit();
+            } else {
+                cout << "Command '" << cmd << "' not recognized." << "\n";
+            }
+        } else {
+            if (cmd == "screen") {
+                if (arg.substr(0, 2) == "-r" || arg.substr(0, 2) == "-s") {
+                    cout << "'" << cmd << " " << arg << "' command recognized. Doing something.\n";
+                } else if (arg == "-ls") {
+                    screen_ls(scheduler);
+                } else {
+                    cout << "Command '" << cmd << " " << arg << "' not recognized." << "\n";
+                }
+            } else if (cmd == "scheduler-test") {
+                schedulerThread = thread(scheduler_test, ref(scheduler), ref(config), ref(cpuCycles));
+            } else if (cmd == "scheduler-stop") {
+                scheduler_stop();
+                if (schedulerThread.joinable()) {
+                    schedulerThread.join();
+                }
+            } else if (cmd == "report-util") {
+                report_util(scheduler);
+            } else if (cmd == "clear") {
+                clear();
+            } else if (cmd == "exit") {
+                exit();
+            } else if (cmd == "?") {
+                command_list();
+            } else {
+                cout << "Command '" << cmd << "' not recognized." << "\n";
+            }
+        }
+	}
 
-    scheduler.runScheduler();
-
-    return 0;
+	return 0;
 }
