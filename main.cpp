@@ -1,15 +1,10 @@
 #include <iostream>
 #include <fstream>
-#include <sstream>
 #include <windows.h>
-#include <iomanip>
-#include <map>
 #include <thread>
 #include <string>
-#include <atomic>
 #include <chrono>
 #include <vector>
-#include <mutex>
 #include <algorithm>
 #include "header/process.h"
 #include "header/scheduler.h"
