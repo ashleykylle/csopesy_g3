@@ -1,6 +1,8 @@
 #include <iostream>
 #include <fstream>
 #include <windows.h>
+#include <iomanip>
+#include <map>
 #include <thread>
 #include <string>
 #include <chrono>
@@ -10,6 +12,7 @@
 #include "header/scheduler.h"
 #include "header/config.h"
 #include "header/utils.h"
+#include "header/screen.h"
 
 using namespace std;
 
@@ -17,6 +20,7 @@ bool osRunning = true;
 bool isInitialized = false;
 bool schedulerRunning = false;
 bool inScreen = false;
+map<string, Screen*> screens;
 
 void header() {
 	setColor(0x07);
@@ -219,6 +223,37 @@ void exit() {
     osRunning = false;
 }
 
+void exit_screen() {
+    system("cls");
+    header();
+}
+
+void screen_s(const string& screenName, Config& config, Scheduler* scheduler, int& cpuCycles) {
+    static int processId = 1;
+    int assignedCore = 0;   
+    string processName = screenName;
+
+    Process* newProcess = new Process(processName, processId, config.minIns + (rand() % (config.maxIns - config.minIns + 1)));
+    scheduler->addProcess(newProcess, assignedCore);
+    Screen* newScreen = new Screen(screenName, newProcess);
+    screens[screenName] = newScreen;
+
+    newScreen->display();
+
+    processId++;
+    exit_screen();
+}
+
+void screen_r(const string& screenName) {
+    if (screens.find(screenName) != screens.end()) {
+        screens[screenName]->display();
+        exit_screen();
+    }
+    else {
+        cout << "Process " << screenName << " not found." << endl;
+    }
+}
+
 int main() {
 	system("cls");
 	header();
@@ -246,9 +281,13 @@ int main() {
             }
         } else {
             if (cmd == "screen") {
-                if (arg.substr(0, 2) == "-r" || arg.substr(0, 2) == "-s") {
-                    cout << "'" << cmd << " " << arg << "' command recognized. Doing something.\n";
-                } else if (arg == "-ls") {
+                if (arg.substr(0, 2) == "-s") {
+                    std::string screenName = arg.substr(3);
+		    screen_s(screenName, ref(config), ref(scheduler), ref(cpuCycles));
+                } else if (arg.substr(0, 2) == "-r") {
+		    std::string screenName = arg.substr(3);
+		    screen_r(screenName);
+		} else if (arg == "-ls") {
                     screen_ls(scheduler, config);
                 } else {
                     cout << "Command '" << cmd << " " << arg << "' not recognized." << "\n";
