@@ -45,7 +45,7 @@ void FCFSScheduler::runScheduler() {
                     finishedProcesses.push_back(currentProcess);
                 }
             } else {
-                break;
+                this_thread::sleep_for(chrono::milliseconds(100));
             }
         }
     };
