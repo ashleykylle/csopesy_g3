@@ -130,17 +130,19 @@ void screen_ls(Scheduler* scheduler) {
     cout << "--------------------------------------\n\n";
 }
 
-void scheduler_test(Scheduler*& scheduler, Config& config, int& cpuCycles) {    
-    if (config.scheduler == "rr") {
-        scheduler = new RoundRobinScheduler(config.numCpu, config.quantumCycles);
-    } else if (config.scheduler == "fcfs") {
-        scheduler = new FCFSScheduler(config.numCpu);
-    }
-
-    schedulerInitialized = true;
-    schedulerRunning = true;
+void scheduler_test(Scheduler*& scheduler, Config& config, int& cpuCycles) { 
     static int currentCore = 0;
-    int processId = 1;
+    static int processId = 1;
+    
+    if (!schedulerInitialized) {
+        if (config.scheduler == "rr") {
+            scheduler = new RoundRobinScheduler(config.numCpu, config.quantumCycles);
+        } else if (config.scheduler == "fcfs") {
+            scheduler = new FCFSScheduler(config.numCpu);
+        }
+        schedulerInitialized = true;
+    }
+    schedulerRunning = true;
 
     while (schedulerRunning) {
         if (cpuCycles % config.batchProcessFreq == 0) {
