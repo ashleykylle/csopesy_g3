@@ -29,6 +29,7 @@ void Screen::display() {
         getline(cin, command);
 
         if (command == "process-smi") {
+            cout << endl;
             if (!attachedProcess->hasFinished()) {
                 cout << "Process: " << attachedProcess->getName() << endl;
                 cout << "Process ID: " << attachedProcess->getId() << endl << endl;
@@ -43,7 +44,7 @@ void Screen::display() {
                 this_thread::sleep_for(chrono::seconds(2));
                 inScreen = false;
             }
-            
+            cout << endl;
         }
         else if (command == "exit") {
             inScreen = false;
