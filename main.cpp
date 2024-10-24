@@ -146,7 +146,13 @@ void scheduler_test(Scheduler* scheduler, Config& config, int& cpuCycles) {
             int assignedCore = currentCore++ % config.numCpu;
             string processName = "P" + to_string(processId);
 
-            scheduler->addProcess(new Process(processName, processId, config.minIns + (rand() % (config.maxIns - config.minIns + 1))), assignedCore);
+            Process* newProcess = new Process(processName, processId, 
+                config.minIns + (rand() % (config.maxIns - config.minIns + 1)));
+            scheduler->addProcess(newProcess, assignedCore);
+
+            Screen* newScreen = new Screen(processName, newProcess);
+            screens[processName] = newScreen;
+
             processId++;
         }
         this_thread::sleep_for(chrono::milliseconds(config.delayPerExec));

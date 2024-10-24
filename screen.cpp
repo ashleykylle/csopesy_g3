@@ -20,9 +20,7 @@ void Screen::display() {
     while (inScreen) {
 
         if (attachedProcess->hasFinished()) {
-            cout << "Process " << attachedProcess->getName() << " has finished.\n";
             screens.erase(screenName);
-            this_thread::sleep_for(chrono::seconds(10));
             inScreen = false;
             break;
         }
@@ -42,6 +40,7 @@ void Screen::display() {
                 cout << "Process ID: " << attachedProcess->getId() << endl << endl;
                 cout << "Finished!" << endl;
                 screens.erase(screenName);
+                this_thread::sleep_for(chrono::seconds(2));
                 inScreen = false;
             }
             
