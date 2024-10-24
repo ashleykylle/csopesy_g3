@@ -238,6 +238,11 @@ void screen_s(const string& screenName, Config& config, Scheduler* scheduler, in
     int assignedCore = 0;   
     string processName = screenName;
 
+	if (screens.find(screenName) != screens.end()) {
+		cout << "Process creation failed. Process name " << screenName << " already exists!\n";
+		return;
+	}
+
     Process* newProcess = new Process(processName, processId, config.minIns + (rand() % (config.maxIns - config.minIns + 1)));
     scheduler->addProcess(newProcess, assignedCore);
     Screen* newScreen = new Screen(screenName, newProcess);
