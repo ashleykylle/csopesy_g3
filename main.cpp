@@ -20,7 +20,6 @@ bool osRunning = true;
 bool isInitialized = false;
 bool schedulerRunning = false;
 bool inScreen = false;
-map<string, Screen*> screens;
 
 void header() {
 	setColor(0x07);

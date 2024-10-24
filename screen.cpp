@@ -1,4 +1,8 @@
 #include "header/screen.h"
+#include <thread>
+#include <chrono>
+
+map<string, Screen*> screens;
 
 Screen::Screen(const string& name, Process* process)
     : screenName(name), attachedProcess(process), currentInstructions(0),
@@ -14,6 +18,15 @@ void Screen::display() {
     cout << "Process ID: " << attachedProcess->getId() << endl << endl;
 
     while (inScreen) {
+
+        if (attachedProcess->hasFinished()) {
+            cout << "Process " << attachedProcess->getName() << " has finished.\n";
+            screens.erase(screenName);
+            this_thread::sleep_for(chrono::seconds(2));
+            inScreen = false;
+            break;
+        }
+
         cout << "Enter command: ";
         getline(cin, command);
 
@@ -28,6 +41,8 @@ void Screen::display() {
                 cout << "Process: " << attachedProcess->getName() << endl;
                 cout << "Process ID: " << attachedProcess->getId() << endl << endl;
                 cout << "Finished!" << endl;
+                screens.erase(screenName);
+                inScreen = false;
             }
             
         }

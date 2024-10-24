@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <string>
+#include <map>
 #include "process.h" 
 
 using namespace std;
@@ -18,4 +19,5 @@ public:
     Screen(const string& name, Process* process);
     void display();
 };
+extern map<string, Screen*> screens;
 #endif
