@@ -22,7 +22,7 @@ void Screen::display() {
         if (attachedProcess->hasFinished()) {
             cout << "Process " << attachedProcess->getName() << " has finished.\n";
             screens.erase(screenName);
-            this_thread::sleep_for(chrono::seconds(2));
+            this_thread::sleep_for(chrono::seconds(10));
             inScreen = false;
             break;
         }
