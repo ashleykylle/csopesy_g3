@@ -138,12 +138,10 @@ void screen_ls(Scheduler* scheduler, Config& config) {
     auto processQueues = scheduler->getProcessQueues();
     int coresUsed = 0;
     int coresAvailable = 0;
-    int activeProcesses = 0;
     double cpuUtilization = 0.0;
     
     vector<Process*> allProcesses;
     for (const auto& coreQueue : processQueues) {
-        activeProcesses += coreQueue.size();
         if (!coreQueue.empty()) {
             coresUsed++;
         }
@@ -151,7 +149,7 @@ void screen_ls(Scheduler* scheduler, Config& config) {
             allProcesses.push_back(process);
         }
     }
-    cpuUtilization = (config.numCpu > 0) ? (static_cast<double>(activeProcesses) / (config.numCpu * 2)) * 100 : 0;
+    cpuUtilization = (coresUsed / config.numCpu) * 100;
     coresAvailable = config.numCpu - coresUsed;
 
     cout << "\nCPU utilization: " << cpuUtilization << "%\n";
@@ -215,12 +213,10 @@ void report_util(Scheduler* scheduler, Config& config) {
     auto processQueues = scheduler->getProcessQueues();
     int coresUsed = 0;
     int coresAvailable = 0;
-    int activeProcesses = 0;
     double cpuUtilization = 0.0;
     
     vector<Process*> allProcesses;
     for (const auto& coreQueue : processQueues) {
-        activeProcesses += coreQueue.size();
         if (!coreQueue.empty()) {
             coresUsed++;
         }
@@ -228,7 +224,7 @@ void report_util(Scheduler* scheduler, Config& config) {
             allProcesses.push_back(process);
         }
     }
-    cpuUtilization = (config.numCpu > 0) ? (static_cast<double>(activeProcesses) / (config.numCpu)) * 100 : 0;
+    cpuUtilization = (coresUsed / config.numCpu) * 100;
     coresAvailable = config.numCpu - coresUsed;
 
     logFile << "\nCPU utilization: " << cpuUtilization << "%\n";
