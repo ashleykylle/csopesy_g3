@@ -14,9 +14,9 @@ void FCFSScheduler::addProcess(Process* process, int core) {
     }
 }
 
-void FCFSScheduler::runScheduler() {
+void FCFSScheduler::runScheduler(const Config& config, int& cpuCycles) {
     isRunning = true;
-    auto coreFunction = [this](int coreId)  {
+    auto coreFunction = [this, &config, &cpuCycles](int coreId)  {
         while (isRunning) {
             Process* currentProcess = nullptr;
 
@@ -29,8 +29,9 @@ void FCFSScheduler::runScheduler() {
 
             if (currentProcess) {
                 while (!currentProcess->hasFinished()) {
-                    currentProcess->executeInstruction(coreId);
-                    this_thread::sleep_for(chrono::milliseconds(100));
+                    if (cpuCycles % config.delayPerExec == 0) {
+                        currentProcess->executeInstruction();
+                    }
                 }
                 currentProcess->markAsFinished();
 
@@ -43,8 +44,6 @@ void FCFSScheduler::runScheduler() {
                     lock_guard<mutex> guard(finishedMutex);
                     finishedProcesses.push_back(currentProcess);
                 }
-            } else {
-                this_thread::sleep_for(chrono::milliseconds(100));
             }
         }
     };
@@ -84,9 +83,9 @@ void RoundRobinScheduler::addProcess(Process* process, int core) {
     }
 }
 
-void RoundRobinScheduler::runScheduler() {
+void RoundRobinScheduler::runScheduler(const Config& config, int& cpuCycles) {
     isRunning = true;
-    auto coreFunction = [this](int coreId) {
+    auto coreFunction = [this, &config, &cpuCycles](int coreId) {
         while (isRunning) {
             Process* currentProcess = nullptr;
 
@@ -101,9 +100,15 @@ void RoundRobinScheduler::runScheduler() {
                 int executedCycles = 0;
                 
                 while (!currentProcess->hasFinished() && executedCycles < quantumCycles) {
-                    currentProcess->executeInstruction(coreId);
-                    executedCycles++;
-                    this_thread::sleep_for(chrono::milliseconds(100));
+                    if (config.delayPerExec != 0) {
+                        if (cpuCycles % config.delayPerExec == 0) {
+                            currentProcess->executeInstruction();
+                            executedCycles++;
+                        }
+                    } else {
+                        currentProcess->executeInstruction();
+                        executedCycles++;
+                    }
                 }
 
                 if (currentProcess->hasFinished()) {
@@ -123,8 +128,6 @@ void RoundRobinScheduler::runScheduler() {
                     processQueues[coreId].erase(processQueues[coreId].begin());
                     processQueues[coreId].push_back(currentProcess);
                 }
-            } else {
-                this_thread::sleep_for(chrono::milliseconds(100));
             }
         }
     };

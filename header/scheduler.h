@@ -6,13 +6,14 @@
 #include <mutex>
 #include <atomic>
 #include "process.h"
+#include "config.h"
 
 using namespace std;
 
 class Scheduler {
 public:
     virtual void addProcess(Process* process, int core) = 0;
-    virtual void runScheduler() = 0;
+    virtual void runScheduler(const Config& config, int& cpuCycles) = 0;
     virtual vector<Process*> getFinishedProcesses() const = 0;
     virtual vector<vector<Process*>> getProcessQueues() const = 0;
     virtual bool schedulerRunning() const = 0;
@@ -32,7 +33,7 @@ private:
 public:
     FCFSScheduler(int cores);
     void addProcess(Process* process, int core) override;
-    void runScheduler() override;
+    void runScheduler(const Config& config, int& cpuCycles) override;
     vector<Process*> getFinishedProcesses() const override;
     vector<vector<Process*>> getProcessQueues() const override;
     bool schedulerRunning() const override;
@@ -52,7 +53,7 @@ private:
 public:
     RoundRobinScheduler(int cores, int quantum);
     void addProcess(Process* process, int core) override;
-    void runScheduler() override;
+    void runScheduler(const Config& config, int& cpuCycles) override;
     vector<Process*> getFinishedProcesses() const override;
     vector<vector<Process*>> getProcessQueues() const override;
     bool schedulerRunning() const override;

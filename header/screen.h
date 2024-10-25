@@ -19,5 +19,7 @@ public:
     Screen(const string& name, Process* process);
     void display();
 };
+
 extern map<string, Screen*> screens;
+
 #endif

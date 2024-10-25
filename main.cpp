@@ -47,7 +47,14 @@ void clear() {
 	header();
 }
 
-void initialize(Config& config, Scheduler*& scheduler) {
+void incrementCpuCycles(int& cpuCycles) {
+    while (osRunning) {
+        cpuCycles++;
+        cout << cpuCycles << "\n";
+    }
+}
+
+void initialize(Config& config, Scheduler*& scheduler, int& cpuCycles) {
     if (readConfig("config.txt", config)) {
         isInitialized = true;
 
@@ -58,8 +65,11 @@ void initialize(Config& config, Scheduler*& scheduler) {
         }
         clear();
 
-        thread schedulerThread([scheduler]() {
-            scheduler->runScheduler();
+        thread cpuCyleThread(incrementCpuCycles, ref(cpuCycles));
+        cpuCyleThread.detach();
+
+        thread schedulerThread([&scheduler, &config, &cpuCycles]() {
+            scheduler->runScheduler(config, cpuCycles);
         });
         schedulerThread.detach();
     }
@@ -86,6 +96,42 @@ void command_list() {
 		cout << "'exit' - exit the terminal\n\n";
 		setColor(0x07);
 	}
+}
+
+void exit_screen() {
+    system("cls");
+    header();
+}
+
+void screen_s(const string& screenName, Config& config, Scheduler* scheduler, int& cpuCycles) {
+    static int processId = 1;
+    int assignedCore = 0;   
+    string processName = screenName;
+
+    if (screens.find(screenName) != screens.end()) {
+		cout << "Process creation failed. Process name " << screenName << " already exists!\n";
+		return;
+	}
+
+    Process* newProcess = new Process(processName, processId, config.minIns + (rand() % (config.maxIns - config.minIns + 1)));
+    scheduler->addProcess(newProcess, assignedCore);
+    Screen* newScreen = new Screen(screenName, newProcess);
+    screens[screenName] = newScreen;
+
+    newScreen->display();
+
+    processId++;
+    exit_screen();
+}
+
+void screen_r(const string& screenName) {
+    if (screens.find(screenName) != screens.end()) {
+        screens[screenName]->display();
+        exit_screen();
+    }
+    else {
+        cout << "Process " << screenName << " not found." << endl;
+    }
 }
 
 void screen_ls(Scheduler* scheduler, Config& config) {
@@ -146,17 +192,9 @@ void scheduler_test(Scheduler* scheduler, Config& config, int& cpuCycles) {
             int assignedCore = currentCore++ % config.numCpu;
             string processName = "P" + to_string(processId);
 
-            Process* newProcess = new Process(processName, processId, 
-                config.minIns + (rand() % (config.maxIns - config.minIns + 1)));
-            scheduler->addProcess(newProcess, assignedCore);
-
-            Screen* newScreen = new Screen(processName, newProcess);
-            screens[processName] = newScreen;
-
+            scheduler->addProcess(new Process(processName, processId, config.minIns + (rand() % (config.maxIns - config.minIns + 1))), assignedCore);
             processId++;
         }
-        this_thread::sleep_for(chrono::milliseconds(config.delayPerExec));
-        cpuCycles++;
     }
 }
 
@@ -190,7 +228,7 @@ void report_util(Scheduler* scheduler, Config& config) {
             allProcesses.push_back(process);
         }
     }
-    cpuUtilization = (config.numCpu > 0) ? (static_cast<double>(activeProcesses) / (config.numCpu * 2)) * 100 : 0;
+    cpuUtilization = (config.numCpu > 0) ? (static_cast<double>(activeProcesses) / (config.numCpu)) * 100 : 0;
     coresAvailable = config.numCpu - coresUsed;
 
     logFile << "\nCPU utilization: " << cpuUtilization << "%\n";
@@ -228,42 +266,6 @@ void exit() {
     osRunning = false;
 }
 
-void exit_screen() {
-    system("cls");
-    header();
-}
-
-void screen_s(const string& screenName, Config& config, Scheduler* scheduler, int& cpuCycles) {
-    static int processId = 1;
-    int assignedCore = 0;   
-    string processName = screenName;
-
-	if (screens.find(screenName) != screens.end()) {
-		cout << "Process creation failed. Process name " << screenName << " already exists!\n";
-		return;
-	}
-
-    Process* newProcess = new Process(processName, processId, config.minIns + (rand() % (config.maxIns - config.minIns + 1)));
-    scheduler->addProcess(newProcess, assignedCore);
-    Screen* newScreen = new Screen(screenName, newProcess);
-    screens[screenName] = newScreen;
-
-    newScreen->display();
-
-    processId++;
-    exit_screen();
-}
-
-void screen_r(const string& screenName) {
-    if (screens.find(screenName) != screens.end()) {
-        screens[screenName]->display();
-        exit_screen();
-    }
-    else {
-        cout << "Process " << screenName << " not found." << endl;
-    }
-}
-
 int main() {
 	system("cls");
 	header();
@@ -283,7 +285,7 @@ int main() {
 		
         if (!isInitialized) {
             if (cmd == "initialize") {
-			    initialize(config, scheduler);
+			    initialize(config, scheduler, cpuCycles);
             } else if (cmd == "exit") {
                 exit();
             } else {
@@ -292,12 +294,12 @@ int main() {
         } else {
             if (cmd == "screen") {
                 if (arg.substr(0, 2) == "-s") {
-                    std::string screenName = arg.substr(3);
-		    screen_s(screenName, ref(config), ref(scheduler), ref(cpuCycles));
+                    string screenName = arg.substr(3);
+		            screen_s(screenName, ref(config), ref(scheduler), ref(cpuCycles));
                 } else if (arg.substr(0, 2) == "-r") {
-		    std::string screenName = arg.substr(3);
-		    screen_r(screenName);
-		} else if (arg == "-ls") {
+                    string screenName = arg.substr(3);
+                    screen_r(screenName);
+                } else if (arg == "-ls") {
                     screen_ls(scheduler, config);
                 } else {
                     cout << "Command '" << cmd << " " << arg << "' not recognized." << "\n";

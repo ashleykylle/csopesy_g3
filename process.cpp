@@ -9,17 +9,9 @@ Process::Process(const string& processName, int processId, int numInstructions)
     : name(processName), id(processId), totalInstructions(numInstructions), 
         remainingInstructions(numInstructions), isFinished(false) {}
 
-void Process::executeInstruction(int coreId) {
+void Process::executeInstruction() {
     if (remainingInstructions > 0) {
-        auto now = chrono::system_clock::now();
-        time_t now_c = chrono::system_clock::to_time_t(now);
-        tm* now_tm = localtime(&now_c);
-
-        char timestamp[30];
-        strftime(timestamp, sizeof(timestamp), "%m/%d/%Y %I:%M:%S%p", now_tm);
         remainingInstructions--;
-    } else {
-        cout << "Process " << id << ": " << name << " has already finished.\n";
     }
 }
 

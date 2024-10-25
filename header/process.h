@@ -19,7 +19,7 @@ private:
 public:
     Process(const string& processName, int processId, int numInstructions);
 
-    void executeInstruction(int coreId);
+    void executeInstruction();
     void markAsFinished();
     void setCoreId(int core);
     bool hasFinished() const;
