@@ -41,6 +41,7 @@ void Screen::display() {
                 cout << "Process ID: " << attachedProcess->getId() << endl << endl;
                 cout << "Finished!" << endl;
                 screens.erase(screenName);
+                this_thread::sleep_for(chrono::seconds(2));
                 inScreen = false;
             }
             cout << endl;
