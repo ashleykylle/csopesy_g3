@@ -19,7 +19,6 @@ using namespace std;
 bool osRunning = true;
 bool isInitialized = false;
 bool schedulerRunning = false;
-bool inScreen = false;
 
 void header() {
 	setColor(0x07);
@@ -77,24 +76,16 @@ void initialize(Config& config, Scheduler*& scheduler, int& cpuCycles) {
 void command_list() {
 	setColor(0x0E);
 	cout << "\nAvailable Commands:\n";
-	
-	if (inScreen) {
-		setColor(0x02);
-        cout << "'process-smi' - view process info\n";
-		cout << "'exit' - return to the main menu\n";
-		setColor(0x07);
-	} else {
-		setColor(0x02);
-		cout << "'screen -r <screen name>' - load a screen\n";
-		cout << "'screen -s <screen name>' - create/save a screen\n";
-		cout << "'screen -ls' - show all running & finished processes\n";
-		cout << "'scheduler-test' - generate dummy processes\n";
-		cout << "'scheduler-stop' - stop generating processes\n";
-		cout << "'report-util' - saves the process info in 'screen-ls' in a log file\n";
-		cout << "'clear' - clear the screen\n";
-		cout << "'exit' - exit the terminal\n\n";
-		setColor(0x07);
-	}
+    setColor(0x02);
+    cout << "'screen -r <screen name>' - load a screen\n";
+    cout << "'screen -s <screen name>' - create/save a screen\n";
+    cout << "'screen -ls' - show all running & finished processes\n";
+    cout << "'scheduler-test' - generate dummy processes\n";
+    cout << "'scheduler-stop' - stop generating processes\n";
+    cout << "'report-util' - saves the process info in 'screen-ls' in a log file\n";
+    cout << "'clear' - clear the screen\n";
+    cout << "'exit' - exit the terminal\n\n";
+    setColor(0x07);
 }
 
 void exit_screen() {
