@@ -1,7 +1,9 @@
 # csopesy_g3
 Members:
 Jumilla, Sarah Ericka
+
 Ramos, Ashley Kylle
+
 Santos, Alejandro Gabriel
 
 Repository for CSOPESY Group 3 under S11
