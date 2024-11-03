@@ -50,7 +50,6 @@ void clear() {
 void incrementCpuCycles(int& cpuCycles) {
     while (osRunning) {
         cpuCycles++;
-        cout << cpuCycles << "\n";
     }
 }
 
