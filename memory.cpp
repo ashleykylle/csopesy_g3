@@ -43,7 +43,7 @@ void FlatMemoryAllocator::allocateAt(size_t index, size_t size) {
 }
 
 void FlatMemoryAllocator::deallocateAt(size_t index) {
-    while (index < maximumSize && allocationMap[index] == true) {
+    while (index < maximumSize && allocationMap[index]) {
         allocationMap[index] = false;
         memory[index] = '.';
         --allocatedSize;
