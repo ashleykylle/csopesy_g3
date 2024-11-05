@@ -5,9 +5,9 @@
 
 using namespace std;
 
-Process::Process(const string& processName, int processId, int numInstructions)
+Process::Process(const string& processName, int processId, int numInstructions, size_t memoryRequired)
     : name(processName), id(processId), totalInstructions(numInstructions), 
-        remainingInstructions(numInstructions), isFinished(false) {}
+        remainingInstructions(numInstructions), isFinished(false), memoryRequired(memoryRequired) {}
 
 void Process::executeInstruction() {
     if (remainingInstructions > 0) {
@@ -50,4 +50,8 @@ int Process::getTotalInstructions() const {
 
 int Process::getCoreId() const {
     return coreId;
+}
+
+size_t Process::getMemoryRequired() const {
+    return memoryRequired;
 }

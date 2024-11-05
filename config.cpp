@@ -35,6 +35,12 @@ bool readConfig(const string& filename, Config& config) {
                 iss >> config.maxIns;
             } else if (key == "delay-per-exec") {
                 iss >> config.delayPerExec;
+            } else if (key == "max-overall-mem") {
+                iss >> config.maxOverallMem;
+            } else if (key == "mem-per-frame") {
+                iss >> config.memPerFrame;
+            } else if (key == "mem-per-proc") {
+                iss >> config.memPerProc;
             }
         }
     }

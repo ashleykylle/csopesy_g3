@@ -13,6 +13,7 @@
 #include "header/config.h"
 #include "header/utils.h"
 #include "header/screen.h"
+#include "header/memory.h"
 
 using namespace std;
 
@@ -52,22 +53,23 @@ void incrementCpuCycles(int& cpuCycles) {
     }
 }
 
-void initialize(Config& config, Scheduler*& scheduler, int& cpuCycles) {
+void initialize(Config& config, Scheduler*& scheduler, FlatMemoryAllocator*& memoryAllocator, int& cpuCycles) {
     if (readConfig("config.txt", config)) {
         isInitialized = true;
+        memoryAllocator = new FlatMemoryAllocator(config.maxOverallMem);
 
         if (config.scheduler == "rr") {
-            scheduler = new RoundRobinScheduler(config.numCpu, config.quantumCycles);
+            scheduler = new RoundRobinScheduler(config.numCpu, config.quantumCycles, *memoryAllocator);
         } else if (config.scheduler == "fcfs") {
-            scheduler = new FCFSScheduler(config.numCpu);
+            scheduler = new FCFSScheduler(config.numCpu, *memoryAllocator);
         }
         clear();
 
         thread cpuCyleThread(incrementCpuCycles, ref(cpuCycles));
         cpuCyleThread.detach();
 
-        thread schedulerThread([&scheduler, &config, &cpuCycles]() {
-            scheduler->runScheduler(config, cpuCycles);
+        thread schedulerThread([&scheduler, &config, &cpuCycles, &memoryAllocator]() {
+            scheduler->runScheduler(config, cpuCycles, *memoryAllocator);
         });
         schedulerThread.detach();
     }
@@ -103,7 +105,7 @@ void screen_s(const string& screenName, Config& config, Scheduler* scheduler, in
 		return;
 	}
 
-    Process* newProcess = new Process(processName, processId, config.minIns + (rand() % (config.maxIns - config.minIns + 1)));
+    Process* newProcess = new Process(processName, processId, config.minIns + (rand() % (config.maxIns - config.minIns + 1)), config.memPerProc);
     scheduler->addProcess(newProcess, assignedCore);
     Screen* newScreen = new Screen(screenName, newProcess);
     screens[screenName] = newScreen;
@@ -180,7 +182,7 @@ void scheduler_test(Scheduler* scheduler, Config& config, int& cpuCycles) {
             int assignedCore = currentCore++ % config.numCpu;
             string processName = "P" + to_string(processId);
 
-            scheduler->addProcess(new Process(processName, processId, config.minIns + (rand() % (config.maxIns - config.minIns + 1))), assignedCore);
+            scheduler->addProcess(new Process(processName, processId, config.minIns + (rand() % (config.maxIns - config.minIns + 1)), config.memPerProc), assignedCore);
             processId++;
         }
     }
@@ -258,9 +260,10 @@ int main() {
 
 	Config config;
     Scheduler* scheduler = nullptr;
+    FlatMemoryAllocator* memoryAllocator = nullptr;
     string input;
-    int cpuCycles = 0;
     thread processThread;
+    int cpuCycles = 0;
 	
 	while (osRunning) {
 		cout << "Enter command: ";
@@ -271,7 +274,7 @@ int main() {
 		
         if (!isInitialized) {
             if (cmd == "initialize") {
-			    initialize(config, scheduler, cpuCycles);
+			    initialize(config, scheduler, memoryAllocator, cpuCycles);
             } else if (cmd == "exit") {
                 exit();
             } else {

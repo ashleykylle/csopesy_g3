@@ -15,9 +15,10 @@ private:
     int remainingInstructions;
     atomic<bool> isFinished;
     string completionTimestamp;
+    size_t memoryRequired;
 
 public:
-    Process(const string& processName, int processId, int numInstructions);
+    Process(const string& processName, int processId, int numInstructions, size_t memoryRequired);
 
     void executeInstruction();
     void markAsFinished();
@@ -29,6 +30,7 @@ public:
     int getId() const;
     int getTotalInstructions() const;
     int getCoreId() const;
+    size_t getMemoryRequired() const;
 };
 
 #endif
