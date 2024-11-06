@@ -21,11 +21,9 @@ void* FlatMemoryAllocator::allocate(size_t size) {
     return nullptr;
 }
 
-void FlatMemoryAllocator::deallocate(void* ptr) {
+void FlatMemoryAllocator::deallocate(void* ptr, size_t size) {
     size_t index = static_cast<char*>(ptr) - &memory[0];
-    if (allocationMap[index]) {
-        deallocateAt(index);
-    }
+    deallocateAt(index, size);
 }
 
 string FlatMemoryAllocator::visualizeMemory() {
@@ -42,11 +40,12 @@ void FlatMemoryAllocator::allocateAt(size_t index, size_t size) {
     allocatedSize += size;
 }
 
-void FlatMemoryAllocator::deallocateAt(size_t index) {
-    while (index < maximumSize && allocationMap[index]) {
+void FlatMemoryAllocator::deallocateAt(size_t index, size_t size) {
+    while (allocationMap[index] && size > 0) {
         allocationMap[index] = false;
         memory[index] = '.';
         --allocatedSize;
         ++index;
+        --size;
     }
 }

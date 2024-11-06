@@ -1,4 +1,5 @@
 #include <chrono>
+#include <iostream>
 #include "header/scheduler.h"
 
 using namespace std;
@@ -126,12 +127,12 @@ void RoundRobinScheduler::runScheduler(const Config& config, int& cpuCycles, Fla
                             lock_guard<mutex> guard(finishedMutex);
                             finishedProcesses.push_back(currentProcess);
                         }
-                        memoryAllocator.deallocate(memory);
+                        memoryAllocator.deallocate(memory, currentProcess->getMemoryRequired());
                     } else {
                         lock_guard<mutex> guard(queueMutex);
                         processQueues[coreId].erase(processQueues[coreId].begin());
                         processQueues[coreId].push_back(currentProcess);
-                        memoryAllocator.deallocate(memory);
+                        memoryAllocator.deallocate(memory, currentProcess->getMemoryRequired());
                     }
                 }
                 else {
