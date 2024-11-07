@@ -1,6 +1,5 @@
 #include "header/memory.h"
 #include <algorithm>
-#include <iostream>
 
 using namespace std;
 
