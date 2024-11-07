@@ -98,7 +98,7 @@ void RoundRobinScheduler::runScheduler(const Config& config, int& cpuCycles, Fla
             }
 
             if (currentProcess) {
-                void* memory = memoryAllocator.allocate(currentProcess->getMemoryRequired());
+                void* memory = memoryAllocator.allocate(currentProcess->getMemoryRequired(), config.memPerFrame);
 
                 if (memory) {
                     int executedCycles = 0;
@@ -127,12 +127,12 @@ void RoundRobinScheduler::runScheduler(const Config& config, int& cpuCycles, Fla
                             lock_guard<mutex> guard(finishedMutex);
                             finishedProcesses.push_back(currentProcess);
                         }
-                        memoryAllocator.deallocate(memory, currentProcess->getMemoryRequired());
+                        memoryAllocator.deallocate(memory, currentProcess->getMemoryRequired(), config.memPerFrame);
                     } else {
                         lock_guard<mutex> guard(queueMutex);
                         processQueues[coreId].erase(processQueues[coreId].begin());
                         processQueues[coreId].push_back(currentProcess);
-                        memoryAllocator.deallocate(memory, currentProcess->getMemoryRequired());
+                        memoryAllocator.deallocate(memory, currentProcess->getMemoryRequired(), config.memPerFrame);
                     }
                 }
                 else {
