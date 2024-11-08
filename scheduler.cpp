@@ -115,6 +115,8 @@ void RoundRobinScheduler::runScheduler(const Config& config, int& cpuCycles, Fla
                             executedCycles++;
                         }
                     }
+                    quantumCycleCount++;
+                    memoryAllocator.logMemoryStamp(quantumCycleCount, config.memPerProc, config.memPerFrame);
 
                     if (currentProcess->hasFinished()) {
                         currentProcess->markAsFinished();
@@ -133,10 +135,7 @@ void RoundRobinScheduler::runScheduler(const Config& config, int& cpuCycles, Fla
                         lock_guard<mutex> guard(queueMutex);
                         processQueues[coreId].erase(processQueues[coreId].begin());
                         processQueues[coreId].push_back(currentProcess);
-                        memoryAllocator.deallocate(memory, currentProcess->getMemoryRequired(), config.memPerFrame);
                     }
-                    quantumCycleCount++;
-                    memoryAllocator.logMemoryStamp(quantumCycleCount, config.memPerProc, config.memPerFrame);
                 }
                 else {
                     lock_guard<mutex> guard(queueMutex);
