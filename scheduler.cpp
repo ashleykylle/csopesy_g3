@@ -87,6 +87,7 @@ void RoundRobinScheduler::addProcess(Process* process, int core) {
 void RoundRobinScheduler::runScheduler(const Config& config, int& cpuCycles, FlatMemoryAllocator& memoryAllocator) {
     isRunning = true;
     auto coreFunction = [this, &config, &cpuCycles, &memoryAllocator](int coreId) {
+        int quantumCycleCount = 0;
         while (isRunning) {
             Process* currentProcess = nullptr;
 
@@ -134,6 +135,8 @@ void RoundRobinScheduler::runScheduler(const Config& config, int& cpuCycles, Fla
                         processQueues[coreId].push_back(currentProcess);
                         memoryAllocator.deallocate(memory, currentProcess->getMemoryRequired(), config.memPerFrame);
                     }
+                    quantumCycleCount++;
+                    memoryAllocator.logMemoryStamp(quantumCycleCount, config.memPerProc, config.memPerFrame);
                 }
                 else {
                     lock_guard<mutex> guard(queueMutex);
