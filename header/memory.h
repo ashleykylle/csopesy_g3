@@ -31,6 +31,9 @@ public:
     void* allocate(size_t size, size_t frame) override;
     void deallocate(void* ptr, size_t size, size_t frame) override;
     string visualizeMemory() override;
+    size_t calculateExternalFragmentation(size_t frame) const;
+    void logMemoryStamp(int cycleNumber, size_t size, size_t frame);
+    int countProcessesInMemory(size_t size, size_t frame) const;
 };
 
 #endif
