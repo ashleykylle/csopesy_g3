@@ -9,8 +9,8 @@ using namespace std;
 
 class IMemoryAllocator {
 public:
-    virtual void* allocate(size_t size) = 0;
-    virtual void deallocate(void* ptr) = 0;
+    virtual void* allocate(size_t size, size_t frame) = 0;
+    virtual void deallocate(void* ptr, size_t size, size_t frame) = 0;
     virtual string visualizeMemory() = 0;
 };
 
@@ -21,15 +21,15 @@ private:
     vector<char> memory;
     vector<bool> allocationMap;
     
-    bool canAllocateAt(size_t index, size_t size) const;
-    void allocateAt(size_t index, size_t size);
-    void deallocateAt(size_t index);
+    bool canAllocateAt(size_t index, size_t framesRequired) const;
+    void allocateAt(size_t index, size_t framesRequired);
+    void deallocateAt(size_t index, size_t framesRequired);
 
 public:
     FlatMemoryAllocator(size_t maximumSize);
     ~FlatMemoryAllocator();
-    void* allocate(size_t size) override;
-    void deallocate(void* ptr) override;
+    void* allocate(size_t size, size_t frame) override;
+    void deallocate(void* ptr, size_t size, size_t frame) override;
     string visualizeMemory() override;
 };
 
