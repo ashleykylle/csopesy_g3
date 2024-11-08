@@ -7,7 +7,7 @@ using namespace std;
 
 Process::Process(const string& processName, int processId, int numInstructions, size_t memoryRequired)
     : name(processName), id(processId), totalInstructions(numInstructions), 
-        remainingInstructions(numInstructions), isFinished(false), memoryRequired(memoryRequired) {}
+        remainingInstructions(numInstructions), isFinished(false), memoryRequired(memoryRequired), memory(nullptr) {}
 
 void Process::executeInstruction() {
     if (remainingInstructions > 0) {
@@ -22,6 +22,14 @@ void Process::markAsFinished() {
 
 void Process::setCoreId(int core) {
     coreId = core;
+}
+
+void Process::storeMemory(void* mem) {
+    memory = mem;
+}
+
+void* Process::getAllocatedMemory() const { 
+    return memory;
 }
 
 bool Process::hasFinished() const {
