@@ -91,6 +91,7 @@ int FlatMemoryAllocator::countProcessesInMemory(size_t size, size_t frame) const
 
 void FlatMemoryAllocator::logMemoryStamp(int cycleNumber, size_t size, size_t frame) {
     string filename = "memory_stamp_" + to_string(cycleNumber) + ".txt";
+    size_t maxMemory = maximumSize * frame;
 
     ofstream logFile(filename);
     if (!logFile.is_open()) {
@@ -98,13 +99,14 @@ void FlatMemoryAllocator::logMemoryStamp(int cycleNumber, size_t size, size_t fr
         return;
     }
 
-    logFile << "Timestamp: " << "   (" << getCurrentTimestamp() << ")" << "\n";
-    logFile << "Number of processes in memory: " << countProcessesInMemory(size, frame) << "\n";
+    logFile << "Timestamp: " << "   (" << getCurrentTimestamp() << ")" << endl;
+    logFile << "Number of processes in memory: " << countProcessesInMemory(size, frame) << endl;
 
     size_t externalFrag = calculateExternalFragmentation(frame);
-    logFile << "Total external fragmentation in KB: " << externalFrag << "\n";
+    logFile << "Total external fragmentation in KB: " << externalFrag << endl << endl;
+    logFile << "----end---- = " << maxMemory << endl << endl;
+    // Insert ASCII printout of the memory here
+    logFile << "----start---- = 0" << endl;
 
     logFile.close();
-
-    //cout << "Report generated at C:/" << filename << "\n";
 }
