@@ -103,7 +103,6 @@ void FlatMemoryAllocator::logMemoryStamp(int cycleNumber, size_t size, size_t fr
 
     size_t externalFrag = calculateExternalFragmentation(frame);
     logFile << "Total external fragmentation in KB: " << externalFrag << "\n";
-    logFile << visualizeMemory() << "\n";
 
     logFile.close();
 
