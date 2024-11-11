@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <windows.h>
+#include <direct.h>
 #include <iomanip>
 #include <map>
 #include <thread>
@@ -56,7 +57,7 @@ void incrementCpuCycles(int& cpuCycles) {
 void initialize(Config& config, Scheduler*& scheduler, FlatMemoryAllocator*& memoryAllocator, int& cpuCycles) {
     if (readConfig("config.txt", config)) {
         isInitialized = true;
-        memoryAllocator = new FlatMemoryAllocator(config.maxOverallMem / config.memPerFrame);
+        memoryAllocator = new FlatMemoryAllocator(config.maxOverallMem / config.memPerFrame, config.maxOverallMem / config.memPerProc);
 
         if (config.scheduler == "rr") {
             scheduler = new RoundRobinScheduler(config.numCpu, config.quantumCycles, *memoryAllocator);
@@ -72,6 +73,13 @@ void initialize(Config& config, Scheduler*& scheduler, FlatMemoryAllocator*& mem
             scheduler->runScheduler(config, cpuCycles, *memoryAllocator);
         });
         schedulerThread.detach();
+
+        const char* folderName = "logs";
+        if (_mkdir(folderName) == 0) {
+            std::cout << "Logs folder created successfully.\n";
+        } else {
+            perror("Error creating folder");
+        }
     }
 }
 

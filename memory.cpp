@@ -7,18 +7,18 @@
 
 using namespace std;
 
-FlatMemoryAllocator::FlatMemoryAllocator(size_t maximumSize)
-    : maximumSize(maximumSize), allocatedSize(0), memory(maximumSize, '.'), allocationMap(maximumSize, false) {}
+FlatMemoryAllocator::FlatMemoryAllocator(size_t maximumSize, size_t maxProcess)
+    : maximumSize(maximumSize), allocatedSize(0), memory(maximumSize, '.'), allocationMap(maximumSize, false), processMap(maxProcess, "0") {}
 
 FlatMemoryAllocator::~FlatMemoryAllocator() {
     memory.clear();
 }
 
-void* FlatMemoryAllocator::allocate(size_t size, size_t frame) {
+void* FlatMemoryAllocator::allocate(size_t size, size_t frame, string name) {
     size_t framesRequired = (size + frame - 1) / frame;
     for (size_t i = 0; i < maximumSize; ++i) {
         if (!allocationMap[i] && canAllocateAt(i, framesRequired)) {
-            allocateAt(i, framesRequired);
+            allocateAt(i, framesRequired, name);
             return &memory[i];
         }
     }
@@ -31,8 +31,17 @@ void FlatMemoryAllocator::deallocate(void* ptr, size_t size, size_t frame) {
     deallocateAt(index, framesRequired);
 }
 
-string FlatMemoryAllocator::visualizeMemory() {
-    return string(memory.begin(), memory.end());
+vector<int> FlatMemoryAllocator::visualizeMemory(size_t size, size_t frame) {
+    vector<int> indices;
+    size_t framesRequired = (size + frame - 1) / frame;
+
+    for (size_t i = 0; i < maximumSize; ++i) {
+        if (allocationMap[i]) {
+            indices.push_back(i);
+            i = i + framesRequired - 1;
+        }
+    }
+    return indices;
 }
 
 bool FlatMemoryAllocator::canAllocateAt(size_t index, size_t framesRequired) const {
@@ -44,15 +53,21 @@ bool FlatMemoryAllocator::canAllocateAt(size_t index, size_t framesRequired) con
     return true;
 }
 
-void FlatMemoryAllocator::allocateAt(size_t index, size_t framesRequired) {
+void FlatMemoryAllocator::allocateAt(size_t index, size_t framesRequired, string name) {
+    size_t pIndex = index / framesRequired;
+
     fill(allocationMap.begin() + index, allocationMap.begin() + index + framesRequired, true);
     fill(memory.begin() + index, memory.begin() + index + framesRequired, '#');
+    processMap[pIndex] = name;
     allocatedSize += framesRequired;
 }
 
 void FlatMemoryAllocator::deallocateAt(size_t index, size_t framesRequired) {
+    size_t pIndex = index / framesRequired;
+
     fill(allocationMap.begin() + index, allocationMap.begin() + index + framesRequired, false);
     fill(memory.begin() + index, memory.begin() + index + framesRequired, '.');
+    processMap[pIndex] = "0";
     allocatedSize -= framesRequired;
 }
 
@@ -90,8 +105,11 @@ int FlatMemoryAllocator::countProcessesInMemory(size_t size, size_t frame) const
 }
 
 void FlatMemoryAllocator::logMemoryStamp(int cycleNumber, size_t size, size_t frame) {
-    string filename = "memory_stamp_" + to_string(cycleNumber) + ".txt";
+    string filename = "logs/memory_stamp_" + to_string(cycleNumber) + ".txt";
     size_t maxMemory = maximumSize * frame;
+    size_t framesRequired = (size + frame - 1) / frame;
+    size_t pIndex;
+    vector<int> indices = visualizeMemory(size, frame);
 
     ofstream logFile(filename);
     if (!logFile.is_open()) {
@@ -105,8 +123,15 @@ void FlatMemoryAllocator::logMemoryStamp(int cycleNumber, size_t size, size_t fr
     size_t externalFrag = calculateExternalFragmentation(frame);
     logFile << "Total external fragmentation in KB: " << externalFrag << endl << endl;
     logFile << "----end---- = " << maxMemory << endl << endl;
-    // Insert ASCII printout of the memory here
-    logFile << "----start---- = 0" << endl;
 
+    for (size_t i = indices.size(); i > 0; --i) {
+        pIndex = indices[i - 1] / framesRequired;
+        indices[i - 1] *= frame;
+        logFile << (indices[i - 1] + size) << endl;
+        logFile << processMap[pIndex] << endl;
+        logFile << indices[i - 1] << endl << endl;
+    }
+    
+    logFile << "----start---- = 0" << endl;
     logFile.close();
 }

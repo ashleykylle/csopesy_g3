@@ -102,7 +102,7 @@ void RoundRobinScheduler::runScheduler(const Config& config, int& cpuCycles, Fla
                 void* memory = currentProcess->getAllocatedMemory();
 
                 if (!memory) {
-                    memory = memoryAllocator.allocate(currentProcess->getMemoryRequired(), config.memPerFrame);
+                    memory = memoryAllocator.allocate(currentProcess->getMemoryRequired(), config.memPerFrame, currentProcess->getName());
                     currentProcess->storeMemory(memory);
                 }
 
