@@ -27,7 +27,7 @@ private:
     void deallocateAt(size_t index, size_t framesRequired);
 
 public:
-    FlatMemoryAllocator(size_t maximumSize, size_t maxProcess);
+    FlatMemoryAllocator(size_t maximumSize);
     ~FlatMemoryAllocator();
     void* allocate(size_t size, size_t frame, string name) override;
     void deallocate(void* ptr, size_t size, size_t frame) override;

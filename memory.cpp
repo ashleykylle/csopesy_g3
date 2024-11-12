@@ -7,8 +7,8 @@
 
 using namespace std;
 
-FlatMemoryAllocator::FlatMemoryAllocator(size_t maximumSize, size_t maxProcess)
-    : maximumSize(maximumSize), allocatedSize(0), memory(maximumSize, '.'), allocationMap(maximumSize, false), processMap(maxProcess, "0") {}
+FlatMemoryAllocator::FlatMemoryAllocator(size_t maximumSize)
+    : maximumSize(maximumSize), allocatedSize(0), memory(maximumSize, '.'), allocationMap(maximumSize, false), processMap(maximumSize, "0") {}
 
 FlatMemoryAllocator::~FlatMemoryAllocator() {
     memory.clear();
@@ -54,20 +54,16 @@ bool FlatMemoryAllocator::canAllocateAt(size_t index, size_t framesRequired) con
 }
 
 void FlatMemoryAllocator::allocateAt(size_t index, size_t framesRequired, string name) {
-    size_t pIndex = index / framesRequired;
-
     fill(allocationMap.begin() + index, allocationMap.begin() + index + framesRequired, true);
     fill(memory.begin() + index, memory.begin() + index + framesRequired, '#');
-    processMap[pIndex] = name;
+    fill(processMap.begin() + index, processMap.begin() + index + framesRequired, name);
     allocatedSize += framesRequired;
 }
 
 void FlatMemoryAllocator::deallocateAt(size_t index, size_t framesRequired) {
-    size_t pIndex = index / framesRequired;
-
     fill(allocationMap.begin() + index, allocationMap.begin() + index + framesRequired, false);
     fill(memory.begin() + index, memory.begin() + index + framesRequired, '.');
-    processMap[pIndex] = "0";
+    fill(processMap.begin() + index, processMap.begin() + index + framesRequired, "0");
     allocatedSize -= framesRequired;
 }
 
@@ -107,8 +103,6 @@ int FlatMemoryAllocator::countProcessesInMemory(size_t size, size_t frame) const
 void FlatMemoryAllocator::logMemoryStamp(int cycleNumber, size_t size, size_t frame) {
     string filename = "logs/memory_stamp_" + to_string(cycleNumber) + ".txt";
     size_t maxMemory = maximumSize * frame;
-    size_t framesRequired = (size + frame - 1) / frame;
-    size_t pIndex;
     vector<int> indices = visualizeMemory(size, frame);
 
     ofstream logFile(filename);
@@ -125,8 +119,9 @@ void FlatMemoryAllocator::logMemoryStamp(int cycleNumber, size_t size, size_t fr
     logFile << "----end---- = " << maxMemory << endl << endl;
 
     for (size_t i = indices.size(); i > 0; --i) {
-        pIndex = indices[i - 1] / framesRequired;
+        size_t pIndex = indices[i-1];
         indices[i - 1] *= frame;
+        
         logFile << (indices[i - 1] + size) << endl;
         logFile << processMap[pIndex] << endl;
         logFile << indices[i - 1] << endl << endl;

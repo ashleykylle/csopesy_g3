@@ -57,7 +57,7 @@ void incrementCpuCycles(int& cpuCycles) {
 void initialize(Config& config, Scheduler*& scheduler, FlatMemoryAllocator*& memoryAllocator, int& cpuCycles) {
     if (readConfig("config.txt", config)) {
         isInitialized = true;
-        memoryAllocator = new FlatMemoryAllocator(config.maxOverallMem / config.memPerFrame, config.maxOverallMem / config.memPerProc);
+        memoryAllocator = new FlatMemoryAllocator(config.maxOverallMem / config.memPerFrame);
 
         if (config.scheduler == "rr") {
             scheduler = new RoundRobinScheduler(config.numCpu, config.quantumCycles, *memoryAllocator);
