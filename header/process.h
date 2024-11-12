@@ -16,6 +16,7 @@ private:
     atomic<bool> isFinished;
     string completionTimestamp;
     size_t memoryRequired;
+    void* memory;
 
 public:
     Process(const string& processName, int processId, int numInstructions, size_t memoryRequired);
@@ -23,6 +24,8 @@ public:
     void executeInstruction();
     void markAsFinished();
     void setCoreId(int core);
+    void storeMemory(void* mem);
+    void* getAllocatedMemory() const;
     bool hasFinished() const;
     string getName() const;
     string getCompletionTimestamp() const;
