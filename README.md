@@ -9,6 +9,6 @@ Ramos, Ashley Kylle
 
 Santos, Alejandro Gabriel
 <br><br>
-How to compile & run the program:
+How to run the program:
 
 1. Run by entering: 'main.bat'
