@@ -54,10 +54,16 @@ void incrementCpuCycles(int& cpuCycles) {
     }
 }
 
-void initialize(Config& config, Scheduler*& scheduler, FlatMemoryAllocator*& memoryAllocator, int& cpuCycles) {
+void initialize(Config& config, Scheduler*& scheduler, IMemoryAllocator*& memoryAllocator, int& cpuCycles) {
     if (readConfig("config.txt", config)) {
         isInitialized = true;
-        memoryAllocator = new FlatMemoryAllocator(config.maxOverallMem / config.memPerFrame);
+        size_t maxFrames = config.maxOverallMem / config.memPerFrame;
+        
+        if (config.maxOverallMem == config.memPerFrame) {
+            memoryAllocator = new FlatMemoryAllocator(maxFrames);
+        } else {
+            memoryAllocator = new PagingAllocator(maxFrames);
+        }
 
         if (config.scheduler == "rr") {
             scheduler = new RoundRobinScheduler(config.numCpu, config.quantumCycles, *memoryAllocator);
@@ -74,12 +80,19 @@ void initialize(Config& config, Scheduler*& scheduler, FlatMemoryAllocator*& mem
         });
         schedulerThread.detach();
 
-        const char* folderName = "logs";
-        if (_mkdir(folderName) == 0) {
-            std::cout << "Logs folder created successfully.\n";
-        } else {
-            perror("Error creating folder");
-        }
+        // const char* folderName = "logs";
+        // if (_mkdir(folderName) == 0) {
+        //     cout << "Logs folder created successfully.\n";
+        // } else {
+        //     perror("Error creating folder");
+        // }
+        // const char* folderName = "back_storage";
+
+        // if (_mkdir(folderName) == 0) {
+        //     cout << "Back storage folder created successfully.\n";
+        // } else {
+        //     perror("Error creating folder");
+        // }
     }
 }
 
@@ -107,13 +120,17 @@ void screen_s(const string& screenName, Config& config, Scheduler* scheduler, in
     static int processId = 1;
     int assignedCore = 0;   
     string processName = screenName;
+    int numInstructions = config.minIns + (rand() % (config.maxIns - config.minIns + 1));
+    int memPerProc = config.minMemPerProc + (rand() % (config.maxMemPerProc - config.minMemPerProc + 1));
+    size_t numPages = memPerProc / config.memPerFrame;
+    vector<int> pageIndices(numPages, 0);
 
     if (screens.find(screenName) != screens.end()) {
 		cout << "Process creation failed. Process name " << screenName << " already exists!\n";
 		return;
 	}
 
-    Process* newProcess = new Process(processName, processId, config.minIns + (rand() % (config.maxIns - config.minIns + 1)), config.memPerProc);
+    Process* newProcess = new Process(processName, processId, numInstructions, memPerProc, pageIndices);
     scheduler->addProcess(newProcess, assignedCore);
     Screen* newScreen = new Screen(screenName, newProcess);
     screens[screenName] = newScreen;
@@ -189,8 +206,14 @@ void scheduler_test(Scheduler* scheduler, Config& config, int& cpuCycles) {
         if (cpuCycles % config.batchProcessFreq == 0) {
             int assignedCore = currentCore++ % config.numCpu;
             string processName = "P" + to_string(processId);
-
-            scheduler->addProcess(new Process(processName, processId, config.minIns + (rand() % (config.maxIns - config.minIns + 1)), config.memPerProc), assignedCore);
+            int numInstructions = config.minIns + (rand() % (config.maxIns - config.minIns + 1));
+            int memPerProc = config.minMemPerProc + (rand() % (config.maxMemPerProc - config.minMemPerProc + 1));
+            size_t numPages = (memPerProc + config.memPerFrame - 1) / config.memPerFrame;
+            vector<int> pageIndices;
+            for (size_t i = 0; i < numPages; ++i) {
+                pageIndices.push_back(i);
+            }
+            scheduler->addProcess(new Process(processName, processId, numInstructions, memPerProc, pageIndices), assignedCore);
             processId++;
         }
     }
@@ -227,7 +250,7 @@ void report_util(Scheduler* scheduler, Config& config) {
     cpuUtilization = (coresUsed / config.numCpu) * 100;
     coresAvailable = config.numCpu - coresUsed;
 
-    logFile << "\nCPU utilization: " << cpuUtilization << "%\n";
+    logFile << "CPU utilization: " << cpuUtilization << "%\n";
     logFile << "Cores used: " << coresUsed << "\n";
     logFile << "Cores avaialable: " << coresAvailable << "\n";
     logFile << "--------------------------------------\n";
@@ -268,7 +291,7 @@ int main() {
 
 	Config config;
     Scheduler* scheduler = nullptr;
-    FlatMemoryAllocator* memoryAllocator = nullptr;
+    IMemoryAllocator* memoryAllocator = nullptr;
     string input;
     thread processThread;
     int cpuCycles = 0;

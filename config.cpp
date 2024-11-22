@@ -39,8 +39,10 @@ bool readConfig(const string& filename, Config& config) {
                 iss >> config.maxOverallMem;
             } else if (key == "mem-per-frame") {
                 iss >> config.memPerFrame;
-            } else if (key == "mem-per-proc") {
-                iss >> config.memPerProc;
+            } else if (key == "min-mem-per-proc") {
+                iss >> config.minMemPerProc;
+            } else if (key == "max-mem-per-proc") {
+                iss >> config.maxMemPerProc;
             }
         }
     }

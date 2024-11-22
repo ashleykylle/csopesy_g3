@@ -14,7 +14,7 @@ using namespace std;
 class Scheduler {
 public:
     virtual void addProcess(Process* process, int core) = 0;
-    virtual void runScheduler(const Config& config, int& cpuCycles, FlatMemoryAllocator& memoryAllocator) = 0;
+    virtual void runScheduler(const Config& config, int& cpuCycles, IMemoryAllocator& memoryAllocator) = 0;
     virtual vector<Process*> getFinishedProcesses() const = 0;
     virtual vector<vector<Process*>> getProcessQueues() const = 0;
     virtual bool schedulerRunning() const = 0;
@@ -35,7 +35,7 @@ private:
 public:
     FCFSScheduler(int cores, IMemoryAllocator& memoryAllocator);
     void addProcess(Process* process, int core) override;
-    void runScheduler(const Config& config, int& cpuCycles, FlatMemoryAllocator& memoryAllocator) override;
+    void runScheduler(const Config& config, int& cpuCycles, IMemoryAllocator& memoryAllocator) override;
     vector<Process*> getFinishedProcesses() const override;
     vector<vector<Process*>> getProcessQueues() const override;
     bool schedulerRunning() const override;
@@ -47,6 +47,7 @@ private:
     int quantumCycles;
     vector<thread> coreThreads;
     vector<vector<Process*>> processQueues;
+    vector<Process*> processOrder;
     vector<Process*> finishedProcesses;
     mutex queueMutex;
     mutex finishedMutex;
@@ -56,7 +57,7 @@ private:
 public:
     RoundRobinScheduler(int cores, int quantum, IMemoryAllocator& memoryAllocator);
     void addProcess(Process* process, int core) override;
-    void runScheduler(const Config& config, int& cpuCycles, FlatMemoryAllocator& memoryAllocator) override;
+    void runScheduler(const Config& config, int& cpuCycles, IMemoryAllocator& memoryAllocator) override;
     vector<Process*> getFinishedProcesses() const override;
     vector<vector<Process*>> getProcessQueues() const override;
     bool schedulerRunning() const override;

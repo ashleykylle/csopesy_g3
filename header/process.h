@@ -3,6 +3,9 @@
 
 #include <string>
 #include <atomic>
+#include <vector>
+#include <queue>
+#include <unordered_set>
 
 using namespace std;
 
@@ -17,9 +20,10 @@ private:
     string completionTimestamp;
     size_t memoryRequired;
     void* memory;
+    vector<int> pageIndices;
 
 public:
-    Process(const string& processName, int processId, int numInstructions, size_t memoryRequired);
+    Process(const string& processName, int processId, int numInstructions, size_t memoryRequired, vector<int> pageIndices);
 
     void executeInstruction();
     void markAsFinished();
@@ -33,7 +37,21 @@ public:
     int getId() const;
     int getTotalInstructions() const;
     int getCoreId() const;
+    int getNumPages() const;
     size_t getMemoryRequired() const;
+    const vector<int>& getPageIndices() const;
+    void storeToBackStorage(const string& filename);
+};
+
+class FIFOPageReplacement {
+private:
+    int frameCount;
+    queue<int> memoryQueue;
+    unordered_set<int> pageTable;
+
+public:
+    FIFOPageReplacement(int frameCount);
+    void loadProcess(const Process& process);
 };
 
 #endif

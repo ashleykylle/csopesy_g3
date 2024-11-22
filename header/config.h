@@ -15,7 +15,8 @@ struct Config {
     int delayPerExec;
     int maxOverallMem;
     int memPerFrame;
-    int memPerProc;
+    int minMemPerProc;
+    int maxMemPerProc;
 };
 
 bool readConfig(const string& filename, Config& config);

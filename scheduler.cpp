@@ -15,7 +15,7 @@ void FCFSScheduler::addProcess(Process* process, int core) {
     }
 }
 
-void FCFSScheduler::runScheduler(const Config& config, int& cpuCycles, FlatMemoryAllocator& memoryAllocator) {
+void FCFSScheduler::runScheduler(const Config& config, int& cpuCycles, IMemoryAllocator& memoryAllocator) {
     isRunning = true;
     auto coreFunction = [this, &config, &cpuCycles](int coreId)  {
         while (isRunning) {
@@ -84,7 +84,7 @@ void RoundRobinScheduler::addProcess(Process* process, int core) {
     }
 }
 
-void RoundRobinScheduler::runScheduler(const Config& config, int& cpuCycles, FlatMemoryAllocator& memoryAllocator) {
+void RoundRobinScheduler::runScheduler(const Config& config, int& cpuCycles, IMemoryAllocator& memoryAllocator) {
     isRunning = true;
     auto coreFunction = [this, &config, &cpuCycles, &memoryAllocator](int coreId) {
         int quantumCycleCount = 0;
@@ -102,9 +102,27 @@ void RoundRobinScheduler::runScheduler(const Config& config, int& cpuCycles, Fla
                 void* memory = currentProcess->getAllocatedMemory();
 
                 if (!memory) {
-                    memory = memoryAllocator.allocate(currentProcess->getMemoryRequired(), config.memPerFrame, currentProcess->getName());
+                    memory = memoryAllocator.allocate(currentProcess);
                     currentProcess->storeMemory(memory);
                 }
+                
+                // Check first if memory is allocated or not
+                // if (memory == nullptr) {
+                //     memory = memoryAllocator.allocate(currentProcess);
+
+                //     // If allocations fails, it means memory is full
+                //     if (memory == nullptr) {
+                //         Process* oldestProcess = processOrder.front();
+
+                //         processOrder.erase(processOrder.begin());
+                //         processOrder.push_back(oldestProcess);
+                //         memoryAllocator.deallocate(oldestProcess);
+                //         oldestProcess->storeMemory(nullptr);
+                //         // oldestProcess->storeToBackStorage("back_storage/" + oldestProcess->getName() + ".txt");
+                //         memory = memoryAllocator.allocate(currentProcess);
+                //     }
+                //     currentProcess->storeMemory(memory);
+                // }
 
                 if (memory) {
                     int executedCycles = 0;
@@ -121,7 +139,7 @@ void RoundRobinScheduler::runScheduler(const Config& config, int& cpuCycles, Fla
                         }
                     }
                     quantumCycleCount++;
-                    memoryAllocator.logMemoryStamp(quantumCycleCount, config.memPerProc, config.memPerFrame);
+                    // memoryAllocator.logMemoryStamp(quantumCycleCount, config.memPerFrame, currentProcess);
 
                     if (currentProcess->hasFinished()) {
                         currentProcess->markAsFinished();
@@ -135,15 +153,14 @@ void RoundRobinScheduler::runScheduler(const Config& config, int& cpuCycles, Fla
                             lock_guard<mutex> guard(finishedMutex);
                             finishedProcesses.push_back(currentProcess);
                         }
-                        memoryAllocator.deallocate(memory, currentProcess->getMemoryRequired(), config.memPerFrame);
+                        memoryAllocator.deallocate(currentProcess);
                         currentProcess->storeMemory(nullptr);
                     } else {
                         lock_guard<mutex> guard(queueMutex);
                         processQueues[coreId].erase(processQueues[coreId].begin());
                         processQueues[coreId].push_back(currentProcess);
                     }
-                }
-                else {
+                } else {
                     lock_guard<mutex> guard(queueMutex);
                     processQueues[coreId].erase(processQueues[coreId].begin());
                     processQueues[coreId].push_back(currentProcess);
