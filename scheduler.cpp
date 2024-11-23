@@ -17,7 +17,7 @@ void FCFSScheduler::addProcess(Process* process, int core) {
 
 void FCFSScheduler::runScheduler(const Config& config, int& cpuCycles, IMemoryAllocator& memoryAllocator) {
     isRunning = true;
-    auto coreFunction = [this, &config, &cpuCycles](int coreId)  {
+    auto coreFunction = [this, &config, &cpuCycles, &memoryAllocator](int coreId)  {
         while (isRunning) {
             Process* currentProcess = nullptr;
 
@@ -29,21 +29,36 @@ void FCFSScheduler::runScheduler(const Config& config, int& cpuCycles, IMemoryAl
             }
 
             if (currentProcess) {
-                while (!currentProcess->hasFinished()) {
-                    if (cpuCycles % config.delayPerExec == 0) {
-                        currentProcess->executeInstruction();
+                void* memory = currentProcess->getAllocatedMemory();
+
+                if (!memory) {
+                    memory = memoryAllocator.allocate(currentProcess);
+                    currentProcess->storeMemory(memory);
+                }
+
+                if (memory) {
+                    while (!currentProcess->hasFinished()) {
+                        if (config.delayPerExec != 0) {
+                            if (cpuCycles % config.delayPerExec == 0) {
+                                currentProcess->executeInstruction();
+                            }
+                        } else {
+                            currentProcess->executeInstruction();
+                        }
                     }
-                }
-                currentProcess->markAsFinished();
+                    currentProcess->markAsFinished();
 
-                {
-                    lock_guard<mutex> guard(queueMutex);
-                    processQueues[coreId].erase(processQueues[coreId].begin());
-                }
+                    {
+                        lock_guard<mutex> guard(queueMutex);
+                        processQueues[coreId].erase(processQueues[coreId].begin());
+                    }
 
-                {
-                    lock_guard<mutex> guard(finishedMutex);
-                    finishedProcesses.push_back(currentProcess);
+                    {
+                        lock_guard<mutex> guard(finishedMutex);
+                        finishedProcesses.push_back(currentProcess);
+                    }
+                    memoryAllocator.deallocate(currentProcess);
+                    currentProcess->storeMemory(nullptr);
                 }
             }
         }
@@ -105,24 +120,6 @@ void RoundRobinScheduler::runScheduler(const Config& config, int& cpuCycles, IMe
                     memory = memoryAllocator.allocate(currentProcess);
                     currentProcess->storeMemory(memory);
                 }
-                
-                // Check first if memory is allocated or not
-                // if (memory == nullptr) {
-                //     memory = memoryAllocator.allocate(currentProcess);
-
-                //     // If allocations fails, it means memory is full
-                //     if (memory == nullptr) {
-                //         Process* oldestProcess = processOrder.front();
-
-                //         processOrder.erase(processOrder.begin());
-                //         processOrder.push_back(oldestProcess);
-                //         memoryAllocator.deallocate(oldestProcess);
-                //         oldestProcess->storeMemory(nullptr);
-                //         // oldestProcess->storeToBackStorage("back_storage/" + oldestProcess->getName() + ".txt");
-                //         memory = memoryAllocator.allocate(currentProcess);
-                //     }
-                //     currentProcess->storeMemory(memory);
-                // }
 
                 if (memory) {
                     int executedCycles = 0;
