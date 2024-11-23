@@ -164,19 +164,6 @@ void PagingAllocator::deallocate(Process* process) {
     deallocateFrames(numFramesNeeded, frameIndices);
 }
 
-vector<int> PagingAllocator::visualizeMemory(size_t size, size_t frame) {
-    vector<int> indices;
-    // size_t framesRequired = (size + frame - 1) / frame;
-
-    // for (size_t i = 0; i < maximumSize; ++i) {
-    //     if (allocationMap[i]) {
-    //         indices.push_back(i);
-    //         i = i + framesRequired - 1;
-    //     }
-    // }
-    // return indices;
-}
-
 // void PagingAllocator::visualizeMemory() const {
 //     cout << "Memory visualization:\n";
 //     for (size_t frameIndex = 0; frameIndex < numFrames; ++frameIndex) {
@@ -209,36 +196,4 @@ void PagingAllocator::deallocateFrames(size_t numFrames, vector<size_t> frameInd
     for (size_t i = 0; i < numFrames; ++i) {
         freeFrameList.push_back(frameIndices[i]);
     }
-}
-
-void PagingAllocator::logMemoryStamp(int cycleNumber, size_t frame, Process* process) {
-    string filename = "logs/memory_stamp_" + to_string(cycleNumber) + ".txt";
-    // size_t maxMemory = maximumSize * frame;
-    // size_t size = process->getMemoryRequired();
-    // vector<int> indices = visualizeMemory(size, frame);
-
-    // ofstream logFile(filename);
-    // if (!logFile.is_open()) {
-    //     cout << "Failed to open log file.\n";
-    //     return;
-    // }
-
-    // logFile << "Timestamp: " << "   (" << getCurrentTimestamp() << ")" << endl;
-    // logFile << "Number of processes in memory: " << countProcessesInMemory(process) << endl;
-
-    // size_t externalFrag = calculateExternalFragmentation(frame);
-    // logFile << "Total external fragmentation in KB: " << externalFrag << endl << endl;
-    // logFile << "----end---- = " << maxMemory << endl << endl;
-
-    // for (size_t i = indices.size(); i > 0; --i) {
-    //     size_t pIndex = indices[i-1];
-    //     indices[i - 1] *= frame;
-        
-    //     logFile << (indices[i - 1] + size) << endl;
-    //     logFile << processMap[pIndex] << endl;
-    //     logFile << indices[i - 1] << endl << endl;
-    // }
-    
-    // logFile << "----start---- = 0" << endl;
-    // logFile.close();
 }
