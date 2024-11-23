@@ -157,6 +157,10 @@ void RoundRobinScheduler::runScheduler(const Config& config, int& cpuCycles, IMe
                         processQueues[coreId].erase(processQueues[coreId].begin());
                         processQueues[coreId].push_back(currentProcess);
                     }
+                } else {
+                    lock_guard<mutex> guard(queueMutex);
+                    processQueues[coreId].erase(processQueues[coreId].begin());
+                    processQueues[coreId].push_back(currentProcess);
                 }
             }
         }
