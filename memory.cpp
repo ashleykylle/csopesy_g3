@@ -164,6 +164,8 @@ void PagingAllocator::deallocate(Process* process) {
     deallocateFrames(numFramesNeeded, frameIndices);
 }
 
+vector<int> PagingAllocator::visualizeMemory(size_t size, size_t frame) {}
+
 // void PagingAllocator::visualizeMemory() const {
 //     cout << "Memory visualization:\n";
 //     for (size_t frameIndex = 0; frameIndex < numFrames; ++frameIndex) {
@@ -197,3 +199,5 @@ void PagingAllocator::deallocateFrames(size_t numFrames, vector<size_t> frameInd
         freeFrameList.push_back(frameIndices[i]);
     }
 }
+
+void PagingAllocator::logMemoryStamp(int cycleNumber, size_t frame, Process* process) {}
