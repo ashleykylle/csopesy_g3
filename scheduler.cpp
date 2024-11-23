@@ -12,7 +12,6 @@ void FCFSScheduler::addProcess(Process* process, int core) {
         lock_guard<mutex> guard(queueMutex);
         process->setCoreId(core);
         processQueues[core].push_back(process);
-        processOrder.push_back(process);
     }
 }
 
@@ -32,21 +31,8 @@ void FCFSScheduler::runScheduler(const Config& config, int& cpuCycles, IMemoryAl
             if (currentProcess) {
                 void* memory = currentProcess->getAllocatedMemory();
 
-                // Triggers if process is not allocated yet
                 if (!memory) {
                     memory = memoryAllocator.allocate(currentProcess);
-
-                    // Triggers if allocation failure, due to full memory
-                    while (!memory) {
-                        Process* oldestProcess = processOrder.front();
-                        processOrder.erase(processOrder.begin());
-                        processOrder.push_back(oldestProcess);
-
-                        memoryAllocator.deallocate(oldestProcess);
-                        oldestProcess->storeMemory(nullptr);
-
-                        memory = memoryAllocator.allocate(currentProcess);
-                    }
                     currentProcess->storeMemory(memory);
                 }
 
@@ -71,7 +57,6 @@ void FCFSScheduler::runScheduler(const Config& config, int& cpuCycles, IMemoryAl
                         lock_guard<mutex> guard(finishedMutex);
                         finishedProcesses.push_back(currentProcess);
                     }
-                    processOrder.erase(processOrder.begin());
                     memoryAllocator.deallocate(currentProcess);
                     currentProcess->storeMemory(nullptr);
                 }
@@ -111,7 +96,6 @@ void RoundRobinScheduler::addProcess(Process* process, int core) {
         lock_guard<mutex> guard(queueMutex);
         process->setCoreId(core);
         processQueues[core].push_back(process);
-        processOrder.push_back(process);
     }
 }
 
@@ -132,21 +116,8 @@ void RoundRobinScheduler::runScheduler(const Config& config, int& cpuCycles, IMe
             if (currentProcess) {
                 void* memory = currentProcess->getAllocatedMemory();
 
-                // Triggers if process is not allocated yet
                 if (!memory) {
                     memory = memoryAllocator.allocate(currentProcess);
-
-                    // Triggers if allocation failure, due to full memory
-                    while (!memory) {
-                        Process* oldestProcess = processOrder.front();
-                        processOrder.erase(processOrder.begin());
-                        processOrder.push_back(oldestProcess);
-
-                        memoryAllocator.deallocate(oldestProcess);
-                        oldestProcess->storeMemory(nullptr);
-
-                        memory = memoryAllocator.allocate(currentProcess);
-                    }
                     currentProcess->storeMemory(memory);
                 }
 
@@ -164,7 +135,7 @@ void RoundRobinScheduler::runScheduler(const Config& config, int& cpuCycles, IMe
                             executedCycles++;
                         }
                     }
-                    // quantumCycleCount++;
+                    quantumCycleCount++;
                     // memoryAllocator.logMemoryStamp(quantumCycleCount, config.memPerFrame, currentProcess);
 
                     if (currentProcess->hasFinished()) {
@@ -179,7 +150,6 @@ void RoundRobinScheduler::runScheduler(const Config& config, int& cpuCycles, IMe
                             lock_guard<mutex> guard(finishedMutex);
                             finishedProcesses.push_back(currentProcess);
                         }
-                        processOrder.erase(processOrder.begin());
                         memoryAllocator.deallocate(currentProcess);
                         currentProcess->storeMemory(nullptr);
                     } else {
