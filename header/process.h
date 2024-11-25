@@ -5,7 +5,7 @@
 #include <atomic>
 #include <vector>
 #include <queue>
-#include <unordered_set>
+#include <unordered_map>
 
 using namespace std;
 
@@ -21,6 +21,7 @@ private:
     size_t memoryRequired;
     void* memory;
     vector<int> pageIndices;
+    unordered_map<size_t, size_t> pageTable;
 
 public:
     Process(const string& processName, int processId, int numInstructions, size_t memoryRequired, vector<int> pageIndices);
@@ -29,6 +30,7 @@ public:
     void markAsFinished();
     void setCoreId(int core);
     void storeMemory(void* mem);
+    void storePageTable(unordered_map<size_t, size_t>& pageTable);
     void* getAllocatedMemory() const;
     bool hasFinished() const;
     string getName() const;
@@ -40,18 +42,8 @@ public:
     int getNumPages() const;
     size_t getMemoryRequired() const;
     const vector<int>& getPageIndices() const;
+    const unordered_map<size_t, size_t>& getPageTable() const;
     void storeToBackStorage(const string& filename);
-};
-
-class FIFOPageReplacement {
-private:
-    int frameCount;
-    queue<int> memoryQueue;
-    unordered_set<int> pageTable;
-
-public:
-    FIFOPageReplacement(int frameCount);
-    void loadProcess(const Process& process);
 };
 
 #endif

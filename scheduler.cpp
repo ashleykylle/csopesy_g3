@@ -31,8 +31,14 @@ void FCFSScheduler::runScheduler(const Config& config, int& cpuCycles, IMemoryAl
             if (currentProcess) {
                 void* memory = currentProcess->getAllocatedMemory();
 
+                // Process is not loaded yet into memory
                 if (!memory) {
                     memory = memoryAllocator.allocate(currentProcess);
+
+                    // Not enough free frames available
+                    if(!memory) {
+                        memory = memoryAllocator.handleMemoryFull(currentProcess);
+                    }
                     currentProcess->storeMemory(memory);
                 }
 
@@ -116,8 +122,14 @@ void RoundRobinScheduler::runScheduler(const Config& config, int& cpuCycles, IMe
             if (currentProcess) {
                 void* memory = currentProcess->getAllocatedMemory();
 
+                // Process is not loaded yet into memory
                 if (!memory) {
                     memory = memoryAllocator.allocate(currentProcess);
+
+                    // Not enough free frames available
+                    if(!memory) {
+                        memory = memoryAllocator.handleMemoryFull(currentProcess);
+                    }
                     currentProcess->storeMemory(memory);
                 }
 

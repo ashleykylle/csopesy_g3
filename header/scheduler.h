@@ -47,7 +47,6 @@ private:
     int quantumCycles;
     vector<thread> coreThreads;
     vector<vector<Process*>> processQueues;
-    vector<Process*> processOrder;
     vector<Process*> finishedProcesses;
     mutex queueMutex;
     mutex finishedMutex;

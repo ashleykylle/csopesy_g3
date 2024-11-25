@@ -80,19 +80,19 @@ void initialize(Config& config, Scheduler*& scheduler, IMemoryAllocator*& memory
         });
         schedulerThread.detach();
 
-        // const char* folderName = "logs";
-        // if (_mkdir(folderName) == 0) {
-        //     cout << "Logs folder created successfully.\n";
-        // } else {
-        //     perror("Error creating folder");
-        // }
-        // const char* folderName = "back_storage";
+        const char* folderName = "logs";
+        if (_mkdir(folderName) == 0) {
+            cout << "Logs folder created successfully.\n";
+        } else {
+            perror("Error creating folder");
+        }
+        folderName = "back_storage";
 
-        // if (_mkdir(folderName) == 0) {
-        //     cout << "Back storage folder created successfully.\n";
-        // } else {
-        //     perror("Error creating folder");
-        // }
+        if (_mkdir(folderName) == 0) {
+            cout << "Back storage folder created successfully.\n";
+        } else {
+            perror("Error creating folder");
+        }
     }
 }
 

@@ -14,6 +14,7 @@ public:
     virtual void* allocate(Process* process) = 0;
     virtual void deallocate(Process* process) = 0;
     virtual vector<int> visualizeMemory(size_t size, size_t frame) = 0;
+    virtual void* handleMemoryFull(Process* currentProcess) = 0;
     virtual void logMemoryStamp(int cycleNumber, size_t frame, Process* process) = 0;
     // virtual void visualizeMemory() const = 0;
 };
@@ -37,6 +38,7 @@ public:
     void* allocate(Process* processe) override;
     void deallocate(Process* process) override;
     vector<int> visualizeMemory(size_t size, size_t frame) override;
+    void* handleMemoryFull(Process* currentProcess) override;
     size_t calculateExternalFragmentation(size_t frame) const;
     void logMemoryStamp(int cycleNumber, size_t frame, Process* process) override;
     int countProcessesInMemory(Process* process) const;
@@ -49,8 +51,8 @@ private:
     unordered_map<size_t, size_t> frameMap;
     vector<size_t> freeFrameList;
 
-    size_t allocateFrames(size_t numFrames, size_t processId);
-    void deallocateFrames(size_t numFrames, vector<size_t> frameIndices);
+    size_t allocateFrames(size_t numFrames, Process* process);
+    void deallocateFrames(vector<size_t> frameIndices, Process* process);
 
 public:
     PagingAllocator(size_t maxMemorySize);
@@ -58,6 +60,7 @@ public:
     void* allocate(Process* process) override;
     void deallocate(Process* process) override;
     vector<int> visualizeMemory(size_t size, size_t frame) override;
+    void* handleMemoryFull(Process* currentProcess) override;
     void logMemoryStamp(int cycleNumber, size_t frame, Process* process) override;
     // void visualizeMemory() const override;
 };

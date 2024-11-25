@@ -8,7 +8,7 @@ using namespace std;
 
 Process::Process(const string& processName, int processId, int numInstructions, size_t memoryRequired, vector<int> pageIndices)
     : name(processName), id(processId), totalInstructions(numInstructions), remainingInstructions(numInstructions),
-    isFinished(false), memoryRequired(memoryRequired), memory(nullptr), pageIndices(pageIndices) {}
+    isFinished(false), memoryRequired(memoryRequired), memory(nullptr), pageIndices(pageIndices), pageTable() {}
 
 void Process::executeInstruction() {
     if (remainingInstructions > 0) {
@@ -27,6 +27,10 @@ void Process::setCoreId(int core) {
 
 void Process::storeMemory(void* mem) {
     memory = mem;
+}
+
+void Process::storePageTable(unordered_map<size_t, size_t>& pagetable) {
+    pageTable = pagetable;
 }
 
 void* Process::getAllocatedMemory() const { 
@@ -73,6 +77,10 @@ const vector<int>& Process::getPageIndices() const {
     return pageIndices;
 }
 
+const unordered_map<size_t, size_t>& Process::getPageTable() const {
+    return pageTable;
+}
+
 void Process::storeToBackStorage(const string& filename) {
     ofstream file(filename);
     if (file.is_open()) {
@@ -89,28 +97,4 @@ void Process::storeToBackStorage(const string& filename) {
     } else {
         cerr << "Error: Unable to open file for back storage." << endl;
     }
-}
-
-FIFOPageReplacement::FIFOPageReplacement(int frameCount)
-    : frameCount(frameCount) {}
-
-void FIFOPageReplacement::loadProcess(const Process& process) {
-    cout << "Loading Process " << process.getId() << " into memory...\n";
-
-    for (int pageIndex : process.getPageIndices()) {
-        if (pageTable.find(pageIndex) == pageTable.end()) {
-            if (memoryQueue.size() >= frameCount) {
-                int oldestPage = memoryQueue.front();
-                memoryQueue.pop();
-                pageTable.erase(oldestPage);
-                cout << "Evicting Page " << oldestPage << endl;
-            }
-            memoryQueue.push(pageIndex);
-            pageTable.insert(pageIndex);
-            cout << "Page " << pageIndex << " loaded into memory.\n";
-        } else {
-            cout << "Page " << pageIndex << " is already in memory.\n";
-        }
-    }
-    cout << "Process " << process.getId() << " execution completed.\n\n";
 }
