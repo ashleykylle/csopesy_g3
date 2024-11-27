@@ -251,7 +251,6 @@ void process_smi(Scheduler* scheduler, IMemoryAllocator* memoryAllocator, Config
 
     // MEMORY
     vector<Process*> runningProcesses;
-    cout << "Size of runningProcesses: " << runningProcesses.size() << "\n";
     for (const auto& coreQueue : processQueues) {
         if (!coreQueue.empty()) {
             for (Process* process : coreQueue) {
@@ -272,7 +271,6 @@ void process_smi(Scheduler* scheduler, IMemoryAllocator* memoryAllocator, Config
     cout << usedMemory << "/" << totalMemory << "\n";
     memUtilization = (usedMemory / totalMemory) * 100;
     cout << "Memory Util: " << memUtilization << "%\n";
-    cout << "Size of runningProcesses: " << runningProcesses.size() << endl;
     cout << "\n--------------------------------------\n";
     cout << "Running processes and memory usage:\n";
     sort(runningProcesses.begin(), runningProcesses.end(), [](Process* a, Process* b) {
