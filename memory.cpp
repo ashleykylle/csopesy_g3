@@ -85,7 +85,7 @@ void* FlatMemoryAllocator::handleMemoryFull(Process* currentProcess) {
             oldestProcess->storeMemory(nullptr);
             memory = allocate(currentProcess);
 
-            // Step 4: Move the oldest process to the back of the queue
+            // Step 4: Remove the oldest process from the queue
             // TODO: Implement this step
             
             // Step 5: If allocation is successful, end the loop and perform back storing
@@ -260,38 +260,42 @@ void* PagingAllocator::handleMemoryFull(Process* currentProcess) {
         if (oldestProcess) {
             // Step 4: Get the oldest page of the oldest process
             unordered_map<size_t, size_t> oldestPageTable = oldestProcess->getPageTable();
-            auto it = oldestPageTable.begin();
-            size_t oldestPageIndex = it->first;
-            size_t oldestPageFrame = it->second;
+            if (!oldestPageTable.empty()) {
+                auto it = oldestPageTable.begin();
+                size_t oldestPageIndex = it->first;
+                size_t oldestPageFrame = it->second;
 
-            // Step 5: Get the current process's page table
-            currentPageTable = currentProcess->getPageTable();
-            size_t numFramesNeeded = currentProcess->getNumPages();
+                // Step 5: Get the current process's page table
+                currentPageTable = currentProcess->getPageTable();
+                size_t numFramesNeeded = currentProcess->getNumPages();
 
-            if (numFramesNeeded > currentPageTable.size()) {
-                // Step 6: Swap the pages between the oldest process and the current process
-                frameMap[oldestPageFrame] = currentProcess->getId();
+                if (numFramesNeeded > currentPageTable.size()) {
+                    // Step 6: Swap the pages between the oldest process and the current process
+                    frameMap[oldestPageFrame] = currentProcess->getId();
 
-                // Swap in the page table of both processes
-                currentPageTable[currentPageTable.size()] = oldestPageFrame;
-                oldestPageTable.erase(oldestPageIndex);
+                    // Swap in the page table of both processes
+                    currentPageTable[currentPageTable.size()] = oldestPageFrame;
+                    oldestPageTable.erase(oldestPageIndex);
 
-                // Step 7: Store the updated page tables back to both processes
-                currentProcess->storePageTable(currentPageTable);
-                oldestProcess->storePageTable(oldestPageTable);
+                    // Step 7: Store the updated page tables back to both processes
+                    currentProcess->storePageTable(currentPageTable);
+                    oldestProcess->storePageTable(oldestPageTable);
 
-                // Step 8: If the oldest process has no more pages, move it to the back of the queue
-                if (oldestPageTable.empty()) {
-                    // TODO: Implement this step
+                    // Step 8: If the oldest process has no more pages, remove it from the queue
+                    if (oldestPageTable.empty()) {
+                        // TODO: Implement this step
+                    }
+                } else {
+                    // Step 9: If allocation is successful, end the loop and perform back storing
+                    notAllocated = false;
+                    frameIndex = currentPageTable.begin()->second;
+                    string filename = "back_storage/" + oldestProcess->getName() + ".txt";
+                    oldestProcess->storeToBackStorage(filename);
                 }
+                oldestProcess->storeMemory(nullptr);
             } else {
-                // Step 9: If allocation is successful, end the loop and perform back storing
-                notAllocated = false;
-                frameIndex = currentPageTable.begin()->second;
-                string filename = "back_storage/" + oldestProcess->getName() + ".txt";
-                oldestProcess->storeToBackStorage(filename);
+                // TODO: Move oldest process to the back of the queue
             }
-            oldestProcess->storeMemory(nullptr);
         }
     }
     return reinterpret_cast<void*>(frameIndex);

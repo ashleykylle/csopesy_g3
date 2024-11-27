@@ -31,15 +31,16 @@ void FCFSScheduler::runScheduler(const Config& config, int& cpuCycles, IMemoryAl
             if (currentProcess) {
                 void* memory = currentProcess->getAllocatedMemory();
 
-                // Process is not loaded yet into memory
+                // Process is not loaded into memory
                 if (!memory) {
                     memory = memoryAllocator.allocate(currentProcess);
+                    currentProcess->storeMemory(memory);
 
                     // Not enough free frames available
-                    if(!memory) {
-                        memory = memoryAllocator.handleMemoryFull(currentProcess);
-                    }
-                    currentProcess->storeMemory(memory);
+                    // if(!memory) {
+                    //     memory = memoryAllocator.handleMemoryFull(currentProcess);
+                    // }
+                    // currentProcess->storeMemory(memory);
                 }
 
                 if (memory) {
@@ -65,6 +66,10 @@ void FCFSScheduler::runScheduler(const Config& config, int& cpuCycles, IMemoryAl
                     }
                     memoryAllocator.deallocate(currentProcess);
                     currentProcess->storeMemory(nullptr);
+                } else {
+                    lock_guard<mutex> guard(queueMutex);
+                    processQueues[coreId].erase(processQueues[coreId].begin());
+                    processQueues[coreId].push_back(currentProcess);
                 }
             }
         }
@@ -125,12 +130,13 @@ void RoundRobinScheduler::runScheduler(const Config& config, int& cpuCycles, IMe
                 // Process is not loaded yet into memory
                 if (!memory) {
                     memory = memoryAllocator.allocate(currentProcess);
+                    currentProcess->storeMemory(memory);
 
                     // Not enough free frames available
-                    if(!memory) {
-                        memory = memoryAllocator.handleMemoryFull(currentProcess);
-                    }
-                    currentProcess->storeMemory(memory);
+                    // if(!memory) {
+                    //     memory = memoryAllocator.handleMemoryFull(currentProcess);
+                    // }
+                    // currentProcess->storeMemory(memory);
                 }
 
                 if (memory) {

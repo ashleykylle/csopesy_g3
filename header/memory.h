@@ -50,7 +50,6 @@ private:
     size_t numFrames;
     unordered_map<size_t, size_t> frameMap;
     vector<size_t> freeFrameList;
-
     size_t allocateFrames(size_t numFrames, Process* process);
     void deallocateFrames(vector<size_t> frameIndices, Process* process);
 
