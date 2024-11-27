@@ -224,6 +224,69 @@ void scheduler_stop() {
     schedulerRunning = false;
 }
 
+void process_smi(Scheduler* scheduler, IMemoryAllocator* memoryAllocator, Config& config) {
+    auto processQueues = scheduler->getProcessQueues();
+    double coresUsed = 0.0;
+    double cpuUtilization = 0.0;
+
+    int memUsage = 0;
+    int usedMemory = 0;
+    int totalMemory = 0;
+    double memUtilization = 0.0;
+    void* memory = nullptr;
+
+    // CPU
+    vector<Process*> allProcesses;
+    for (const auto& coreQueue : processQueues) {
+        if (!coreQueue.empty()) {
+            coresUsed++;
+        }
+        for (Process* process : coreQueue) {
+            allProcesses.push_back(process);
+        }
+    }
+    cout << coresUsed << "/" << config.numCpu << "\n";
+    cpuUtilization = (coresUsed / config.numCpu) * 100;
+    cout << "CPU-Util: " << cpuUtilization << "%\n";
+
+    // MEMORY
+    vector<Process*> runningProcesses;
+    cout << "Size of runningProcesses: " << runningProcesses.size() << "\n";
+    for (const auto& coreQueue : processQueues) {
+        if (!coreQueue.empty()) {
+            for (Process* process : coreQueue) {
+                memory = process->getAllocatedMemory();
+                if (memory) {
+                    runningProcesses.push_back(process);
+                    usedMemory += process->getMemoryRequired();
+                }
+            }
+        }
+    }
+
+    // multiply by 1048.576 to convert from KB to MiB
+    usedMemory = usedMemory * 1048.576;
+    totalMemory = config.maxOverallMem * 1048.576;
+    cout << "Memory Usage: " << usedMemory << "MiB / " << totalMemory << "MiB\n";
+
+    cout << usedMemory << "/" << totalMemory << "\n";
+    memUtilization = (usedMemory / totalMemory) * 100;
+    cout << "Memory Util: " << memUtilization << "%\n";
+    cout << "Size of runningProcesses: " << runningProcesses.size() << endl;
+    cout << "\n--------------------------------------\n";
+    cout << "Running processes and memory usage:\n";
+    sort(runningProcesses.begin(), runningProcesses.end(), [](Process* a, Process* b) {
+        return a->getId() < b->getId();
+        });
+
+
+    for (Process* process : runningProcesses) {
+        memUsage = process->getMemoryRequired() * 1048.576;
+        cout << process->getName() << " " << memUsage << "MiB\n";
+    }
+    cout << "--------------------------------------\n\n";
+}
+
 void report_util(Scheduler* scheduler, Config& config) {
     cout << "\n'report-util' command recognized. Generating log file...\n";
 
@@ -331,6 +394,8 @@ int main() {
                 if (processThread.joinable()) {
                     processThread.join();
                 }
+            } else if (cmd == "process-smi") {
+                process_smi(scheduler, memoryAllocator, config);
             } else if (cmd == "report-util") {
                 report_util(scheduler, config);
             } else if (cmd == "clear") {
