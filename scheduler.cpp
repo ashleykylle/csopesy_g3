@@ -29,18 +29,22 @@ void FCFSScheduler::runScheduler(const Config& config, int& cpuCycles, IMemoryAl
             }
 
             if (currentProcess) {
-                void* memory = currentProcess->getAllocatedMemory();
+                void* memory = nullptr;
+                {
+                    lock_guard<mutex> memoryGuard(memoryMutex);
+                    memory = currentProcess->getAllocatedMemory();
 
-                // Process is not loaded into memory
-                if (!memory) {
-                    memory = memoryAllocator.allocate(currentProcess);
-                    currentProcess->storeMemory(memory);
+                    // Process is not loaded into memory
+                    if (!memory) {
+                        memory = memoryAllocator.allocate(currentProcess);
+                        currentProcess->storeMemory(memory);
 
-                    // Not enough free frames available
-                    // if(!memory) {
-                    //     memory = memoryAllocator.handleMemoryFull(currentProcess);
-                    // }
-                    // currentProcess->storeMemory(memory);
+                        // Not enough free frames available
+                        // if(!memory) {
+                        //     memory = memoryAllocator.handleMemoryFull(currentProcess);
+                        // }
+                        // currentProcess->storeMemory(memory);
+                    }
                 }
 
                 if (memory) {
@@ -53,23 +57,25 @@ void FCFSScheduler::runScheduler(const Config& config, int& cpuCycles, IMemoryAl
                             currentProcess->executeInstruction();
                         }
                     }
-                    currentProcess->markAsFinished();
+                    if (currentProcess->hasFinished()) {
+                        currentProcess->markAsFinished();
 
-                    {
-                        lock_guard<mutex> guard(queueMutex);
-                        processQueues[coreId].erase(processQueues[coreId].begin());
-                    }
+                        {
+                            lock_guard<mutex> guard(queueMutex);
+                            processQueues[coreId].erase(processQueues[coreId].begin());
+                        }
 
-                    {
-                        lock_guard<mutex> guard(finishedMutex);
-                        finishedProcesses.push_back(currentProcess);
+                        {
+                            lock_guard<mutex> guard(finishedMutex);
+                            finishedProcesses.push_back(currentProcess);
+                        }
+
+                        {
+                            lock_guard<mutex> memoryGuard(memoryMutex);
+                            memoryAllocator.deallocate(currentProcess);
+                            currentProcess->storeMemory(nullptr);
+                        }
                     }
-                    memoryAllocator.deallocate(currentProcess);
-                    currentProcess->storeMemory(nullptr);
-                } else {
-                    lock_guard<mutex> guard(queueMutex);
-                    processQueues[coreId].erase(processQueues[coreId].begin());
-                    processQueues[coreId].push_back(currentProcess);
                 }
             }
         }
@@ -125,18 +131,22 @@ void RoundRobinScheduler::runScheduler(const Config& config, int& cpuCycles, IMe
             }
 
             if (currentProcess) {
-                void* memory = currentProcess->getAllocatedMemory();
+                void* memory = nullptr;
+                {
+                    lock_guard<mutex> memoryGuard(memoryMutex);
+                    memory = currentProcess->getAllocatedMemory();
 
-                // Process is not loaded yet into memory
-                if (!memory) {
-                    memory = memoryAllocator.allocate(currentProcess);
-                    currentProcess->storeMemory(memory);
+                    // Process is not loaded into memory
+                    if (!memory) {
+                        memory = memoryAllocator.allocate(currentProcess);
+                        currentProcess->storeMemory(memory);
 
-                    // Not enough free frames available
-                    // if(!memory) {
-                    //     memory = memoryAllocator.handleMemoryFull(currentProcess);
-                    // }
-                    // currentProcess->storeMemory(memory);
+                        // Not enough free frames available
+                        // if(!memory) {
+                        //     memory = memoryAllocator.handleMemoryFull(currentProcess);
+                        // }
+                        // currentProcess->storeMemory(memory);
+                    }
                 }
 
                 if (memory) {
@@ -168,8 +178,12 @@ void RoundRobinScheduler::runScheduler(const Config& config, int& cpuCycles, IMe
                             lock_guard<mutex> guard(finishedMutex);
                             finishedProcesses.push_back(currentProcess);
                         }
-                        memoryAllocator.deallocate(currentProcess);
-                        currentProcess->storeMemory(nullptr);
+                        
+                        {
+                            lock_guard<mutex> memoryGuard(memoryMutex);
+                            memoryAllocator.deallocate(currentProcess);
+                            currentProcess->storeMemory(nullptr);
+                        }
                     } else {
                         lock_guard<mutex> guard(queueMutex);
                         processQueues[coreId].erase(processQueues[coreId].begin());

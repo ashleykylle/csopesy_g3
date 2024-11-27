@@ -29,6 +29,7 @@ private:
     vector<Process*> finishedProcesses;
     mutex queueMutex;
     mutex finishedMutex;
+    mutex memoryMutex;
     atomic<bool> isRunning;
     IMemoryAllocator& memoryAllocator;
 
@@ -50,6 +51,7 @@ private:
     vector<Process*> finishedProcesses;
     mutex queueMutex;
     mutex finishedMutex;
+    mutex memoryMutex;
     atomic<bool> isRunning;
     IMemoryAllocator& memoryAllocator;
 
