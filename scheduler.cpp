@@ -38,11 +38,6 @@ void FCFSScheduler::runScheduler(const Config& config, int& cpuCycles, IMemoryAl
                     if (!memory) {
                         memory = memoryAllocator.allocate(currentProcess);
                         currentProcess->storeMemory(memory);
-
-                        // Not enough frames available
-                        if (!memory) {
-                            memory = memoryAllocator.handleMemoryFull(currentProcess);
-                        }
                     }
                 }
 
