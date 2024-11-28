@@ -25,6 +25,9 @@ void FCFSScheduler::runScheduler(const Config& config, int& cpuCycles, IMemoryAl
                 lock_guard<mutex> guard(queueMutex);
                 if (!processQueues[coreId].empty()) {
                     currentProcess = processQueues[coreId].front();
+                    activeCPUTicks++;
+                } else {
+                    idleCPUTicks++;
                 }
             }
 
@@ -121,6 +124,9 @@ void RoundRobinScheduler::runScheduler(const Config& config, int& cpuCycles, IMe
                 lock_guard<mutex> guard(queueMutex);
                 if (!processQueues[coreId].empty()) {
                     currentProcess = processQueues[coreId].front();
+                    activeCPUTicks++;
+                } else {
+                    idleCPUTicks++;
                 }
             }
 

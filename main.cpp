@@ -285,6 +285,58 @@ void process_smi(Scheduler* scheduler, IMemoryAllocator* memoryAllocator, Config
     cout << "--------------------------------------\n\n";
 }
 
+void vmstat(Scheduler* scheduler, Config& config) {
+    auto processQueues = scheduler->getProcessQueues();
+    
+    int placeholder = 1;
+    int usedMemory = 0;
+    int totalMemory = 0;
+    int freeMemory = 0;
+    int idleCPUTicks = 0;
+    int activeCPUTicks = 0;
+
+    void* memory = nullptr;
+    vector<Process*> runningProcesses;
+
+    for (const auto& coreQueue : processQueues) {
+        if (!coreQueue.empty()) {
+            for (Process* process : coreQueue) {
+                memory = process->getAllocatedMemory();
+                if (memory) {
+                    runningProcesses.push_back(process);
+                    usedMemory += process->getMemoryRequired();
+                }
+            }
+        }
+    } 
+
+    usedMemory = usedMemory;
+    totalMemory = config.maxOverallMem;
+    freeMemory = totalMemory - usedMemory;
+
+    idleCPUTicks = scheduler->getIdleCPUTicks();
+    activeCPUTicks = scheduler->getActiveCPUTicks();
+
+    std::cout << "===========================================\n";
+    std::cout << "|                  VMSTAT                 |\n";
+    std::cout << "===========================================\n";
+
+    std::cout << "Memory Stats:\n";
+    std::cout << "\nTotal Memory: " << totalMemory << " KB";
+    std::cout << "\nUsed Memory: " << usedMemory << " KB";
+    std::cout << "\nFree Memory: " << freeMemory << " KB";
+
+    std::cout << "CPU Stats:\n";
+    std::cout << "\nIdle CPU Ticks: " << idleCPUTicks;
+    std::cout << "\nActive CPU Ticks: " << placeholder;
+    std::cout << "\nTotal CPU Ticks: " << idleCPUTicks + activeCPUTicks;
+
+    std::cout << "Paging Stats:\n";
+    std::cout << "\nNum Paged In: " << placeholder;
+    std::cout << "\nNum Paged Out: " << placeholder;
+    std::cout << "\n=========================================\n";
+}
+
 void report_util(Scheduler* scheduler, Config& config) {
     cout << "\n'report-util' command recognized. Generating log file...\n";
 
