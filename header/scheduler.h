@@ -19,11 +19,15 @@ public:
     virtual vector<vector<Process*>> getProcessQueues() const = 0;
     virtual bool schedulerRunning() const = 0;
     virtual ~Scheduler() {}
+    virtual int getIdleCPUTicks() const = 0;
+    virtual int getActiveCPUTicks() const = 0;
 };
 
 class FCFSScheduler : public Scheduler {
 private:
     int numCores;
+    int idleCPUTicks;
+    int activeCPUTicks;
     vector<thread> coreThreads;
     vector<vector<Process*>> processQueues;
     vector<Process*> finishedProcesses;
@@ -40,12 +44,16 @@ public:
     vector<Process*> getFinishedProcesses() const override;
     vector<vector<Process*>> getProcessQueues() const override;
     bool schedulerRunning() const override;
+    int getIdleCPUTicks() const { return idleCPUTicks; }
+    int getActiveCPUTicks() const { return activeCPUTicks; }
 };
 
 class RoundRobinScheduler : public Scheduler {
 private:
     int numCores;
     int quantumCycles;
+    int idleCPUTicks;
+    int activeCPUTicks;
     vector<thread> coreThreads;
     vector<vector<Process*>> processQueues;
     vector<Process*> finishedProcesses;
@@ -62,6 +70,8 @@ public:
     vector<Process*> getFinishedProcesses() const override;
     vector<vector<Process*>> getProcessQueues() const override;
     bool schedulerRunning() const override;
+    int getIdleCPUTicks() const { return idleCPUTicks; }
+    int getActiveCPUTicks() const { return activeCPUTicks; }
 };
 
 #endif
