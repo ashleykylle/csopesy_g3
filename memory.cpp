@@ -21,6 +21,7 @@ void* FlatMemoryAllocator::allocate(Process* process) {
     for (size_t i = 0; i < maximumSize; ++i) {
         if (!allocationMap[i] && canAllocateAt(i, framesRequired)) {
             allocateAt(i, framesRequired, process->getName());
+            processesInMemory.push_back(process);
             return &memory[i];
         }
     }
@@ -31,6 +32,11 @@ void FlatMemoryAllocator::deallocate(Process* process) {
     void* ptr = process->getAllocatedMemory();
     size_t index = static_cast<char*>(ptr) - &memory[0];
     size_t framesRequired = process->getNumPages();
+
+    auto it = find(processesInMemory.begin(), processesInMemory.end(), process);
+    if (it != processesInMemory.end()) {
+        processesInMemory.erase(it);
+    }
     deallocateAt(index, framesRequired);
 }
 
@@ -76,19 +82,18 @@ void* FlatMemoryAllocator::handleMemoryFull(Process* currentProcess) {
     // Step 1: Handle when should the loop stop
     while (notAllocated) {
         // Step 2: Get the oldest process
-        Process* oldestProcess = nullptr;
-        // TODO: Implement this step
+        Process* oldestProcess = processesInMemory.front();
 
         if (oldestProcess) {
             // Step 3: Deallocate the oldest process, then allocate the current process
-            deallocate(oldestProcess);
-            oldestProcess->storeMemory(nullptr);
-            memory = allocate(currentProcess);
-
-            // Step 4: Remove the oldest process from the queue
-            // TODO: Implement this step
-            
-            // Step 5: If allocation is successful, end the loop and perform back storing
+            {
+                lock_guard<mutex> memoryGuard(memoryMutex);
+                deallocate(oldestProcess);
+                oldestProcess->storeMemory(nullptr);
+                memory = allocate(currentProcess);
+                currentProcess->storeMemory(memory);
+            }
+            // Step 4: If allocation is successful, end the loop and perform back storing
             if (memory) {
                 notAllocated = false;
                 string filename = "back_storage/" + oldestProcess->getName() + ".txt";
@@ -176,6 +181,7 @@ void* PagingAllocator::allocate(Process* process) {
         return nullptr;
     }
     size_t frameIndex = allocateFrames(numFramesNeeded, process);
+    processesInMemory.push_back(process);
 
     return reinterpret_cast<void*>(frameIndex);
 }
@@ -189,6 +195,10 @@ void PagingAllocator::deallocate(Process* process) {
         if (entry.second == processId) {
             frameIndices.push_back(entry.first);
         }
+    }
+    auto it = find(processesInMemory.begin(), processesInMemory.end(), process);
+    if (it != processesInMemory.end()) {
+        processesInMemory.erase(it);
     }
     deallocateFrames(frameIndices, process);
 }
@@ -239,11 +249,13 @@ void PagingAllocator::deallocateFrames(vector<size_t> frameIndices, Process* pro
 }
 
 void* PagingAllocator::handleMemoryFull(Process* currentProcess) {
+    void* memory;
     size_t frameIndex;
     bool notAllocated = true;
     // Step 1: Handle when should the loop stop
     while (notAllocated) {
         // Step 2: Make sure to use all free frames first before replacing pages
+        lock_guard<mutex> memoryGuard(memoryMutex);
         unordered_map<size_t, size_t> currentPageTable = currentProcess->getPageTable();
 
         while (!freeFrameList.empty()) {
@@ -255,50 +267,67 @@ void* PagingAllocator::handleMemoryFull(Process* currentProcess) {
 
         // Step 3: Get the oldest process
         Process* oldestProcess = nullptr;
-        // TODO: Implement this step
+        if (!processesInMemory.empty()) {
+            oldestProcess = processesInMemory.front();
+        }
 
-        if (oldestProcess) {
-            // Step 4: Get the oldest page of the oldest process
-            unordered_map<size_t, size_t> oldestPageTable = oldestProcess->getPageTable();
-            if (!oldestPageTable.empty()) {
+        // Step 4: Get the current process's page table
+        currentPageTable = currentProcess->getPageTable();
+        size_t numFramesNeeded = currentProcess->getNumPages();
+
+        // Step 5: Check if all pages have been loaded into memory
+        if (numFramesNeeded > currentPageTable.size()) {
+            if (oldestProcess) {
+                // Step 6: Get the oldest page of the oldest process
+                unordered_map<size_t, size_t> oldestPageTable = oldestProcess->getPageTable();
                 auto it = oldestPageTable.begin();
                 size_t oldestPageIndex = it->first;
                 size_t oldestPageFrame = it->second;
+                
+                // Step 7: Swap the pages between the oldest process and the current process
+                frameMap[oldestPageFrame] = currentProcess->getId();
 
-                // Step 5: Get the current process's page table
-                currentPageTable = currentProcess->getPageTable();
-                size_t numFramesNeeded = currentProcess->getNumPages();
+                // Swap in the page table of both processes
+                currentPageTable[currentPageTable.size()] = oldestPageFrame;
+                oldestPageTable.erase(oldestPageIndex);
 
-                if (numFramesNeeded > currentPageTable.size()) {
-                    // Step 6: Swap the pages between the oldest process and the current process
-                    frameMap[oldestPageFrame] = currentProcess->getId();
+                // Step 8: Store the updated page tables back to both processes
+                currentProcess->storePageTable(currentPageTable);
+                oldestProcess->storePageTable(oldestPageTable);
 
-                    // Swap in the page table of both processes
-                    currentPageTable[currentPageTable.size()] = oldestPageFrame;
-                    oldestPageTable.erase(oldestPageIndex);
-
-                    // Step 7: Store the updated page tables back to both processes
-                    currentProcess->storePageTable(currentPageTable);
-                    oldestProcess->storePageTable(oldestPageTable);
-
-                    // Step 8: If the oldest process has no more pages, remove it from the queue
-                    if (oldestPageTable.empty()) {
-                        // TODO: Implement this step
+                // Step 9: If the oldest process has no more pages, remove it from the queue and perform back storing
+                if (oldestPageTable.empty()) {
+                    auto it = find(processesInMemory.begin(), processesInMemory.end(), oldestProcess);
+                    if (it != processesInMemory.end()) {
+                        oldestProcess->storeMemory(nullptr);
+                        string filename = "back_storage/" + oldestProcess->getName() + ".txt";
+                        oldestProcess->storeToBackStorage(filename);
+                        processesInMemory.erase(it);
                     }
-                } else {
-                    // Step 9: If allocation is successful, end the loop and perform back storing
-                    notAllocated = false;
-                    frameIndex = currentPageTable.begin()->second;
-                    string filename = "back_storage/" + oldestProcess->getName() + ".txt";
-                    oldestProcess->storeToBackStorage(filename);
                 }
-                oldestProcess->storeMemory(nullptr);
-            } else {
-                // TODO: Move oldest process to the back of the queue
+            }
+        } 
+        // All pages are loaded into memory
+        else {
+            frameIndex = currentPageTable.begin()->second;
+            memory = reinterpret_cast<void*>(frameIndex);
+            currentProcess->storeMemory(memory);
+            processesInMemory.push_back(currentProcess);
+            if (memory) {
+                // Step 10: If allocation is successful, end the loop and perform back storing if necessary
+                notAllocated = false;
+                if (oldestProcess) {
+                    // At least 1 page is removed from memory
+                    if (oldestProcess->getNumPages() != oldestProcess->getPageTable().size()) {
+                        oldestProcess->storeMemory(nullptr);
+                        string filename = "back_storage/" + oldestProcess->getName() + ".txt";
+                        oldestProcess->storeToBackStorage(filename);
+                    }
+                }
             }
         }
     }
-    return reinterpret_cast<void*>(frameIndex);
+    return memory;
 }
 
 void PagingAllocator::logMemoryStamp(int cycleNumber, size_t frame, Process* process) {}

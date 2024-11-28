@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include <mutex>
 #include "process.h"
 
 using namespace std;
@@ -26,6 +27,8 @@ private:
     vector<char> memory;
     vector<bool> allocationMap;
     vector<string> processMap;
+    vector<Process*> processesInMemory;
+    mutex memoryMutex;
     
     bool canAllocateAt(size_t index, size_t framesRequired) const;
     void allocateAt(size_t index, size_t framesRequired, string name);
@@ -50,6 +53,9 @@ private:
     size_t numFrames;
     unordered_map<size_t, size_t> frameMap;
     vector<size_t> freeFrameList;
+    vector<Process*> processesInMemory;
+    mutex memoryMutex;
+
     size_t allocateFrames(size_t numFrames, Process* process);
     void deallocateFrames(vector<size_t> frameIndices, Process* process);
 

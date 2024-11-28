@@ -29,7 +29,7 @@ void FCFSScheduler::runScheduler(const Config& config, int& cpuCycles, IMemoryAl
             }
 
             if (currentProcess) {
-                void* memory = nullptr;
+                void* memory;
                 {
                     lock_guard<mutex> memoryGuard(memoryMutex);
                     memory = currentProcess->getAllocatedMemory();
@@ -39,11 +39,10 @@ void FCFSScheduler::runScheduler(const Config& config, int& cpuCycles, IMemoryAl
                         memory = memoryAllocator.allocate(currentProcess);
                         currentProcess->storeMemory(memory);
 
-                        // Not enough free frames available
-                        // if(!memory) {
-                        //     memory = memoryAllocator.handleMemoryFull(currentProcess);
-                        // }
-                        // currentProcess->storeMemory(memory);
+                        // Not enough frames available
+                        if (!memory) {
+                            memory = memoryAllocator.handleMemoryFull(currentProcess);
+                        }
                     }
                 }
 
@@ -131,7 +130,7 @@ void RoundRobinScheduler::runScheduler(const Config& config, int& cpuCycles, IMe
             }
 
             if (currentProcess) {
-                void* memory = nullptr;
+                void* memory;
                 {
                     lock_guard<mutex> memoryGuard(memoryMutex);
                     memory = currentProcess->getAllocatedMemory();
@@ -141,11 +140,10 @@ void RoundRobinScheduler::runScheduler(const Config& config, int& cpuCycles, IMe
                         memory = memoryAllocator.allocate(currentProcess);
                         currentProcess->storeMemory(memory);
 
-                        // Not enough free frames available
-                        // if(!memory) {
-                        //     memory = memoryAllocator.handleMemoryFull(currentProcess);
-                        // }
-                        // currentProcess->storeMemory(memory);
+                        // Not enough frames available
+                        if(!memory) {
+                            memory = memoryAllocator.handleMemoryFull(currentProcess);
+                        }
                     }
                 }
 
