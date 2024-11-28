@@ -105,6 +105,8 @@ void command_list() {
     cout << "'screen -ls' - show all running & finished processes\n";
     cout << "'scheduler-test' - generate dummy processes\n";
     cout << "'scheduler-stop' - stop generating processes\n";
+    cout << "'process-smi' - summary on processes and utilization of memory and cpu\n";
+    cout << "'vmstat' - virtual memory statistics\n";
     cout << "'report-util' - saves the process info in 'screen-ls' in a log file\n";
     cout << "'clear' - clear the screen\n";
     cout << "'exit' - exit the terminal\n\n";
@@ -294,6 +296,8 @@ void vmstat(Scheduler* scheduler, Config& config) {
     int freeMemory = 0;
     int idleCPUTicks = 0;
     int activeCPUTicks = 0;
+    int numPagedIn = 0;
+    int numPagedOut = 0;
 
     void* memory = nullptr;
     vector<Process*> runningProcesses;
@@ -328,7 +332,7 @@ void vmstat(Scheduler* scheduler, Config& config) {
 
     std::cout << "CPU Stats:\n";
     std::cout << "\nIdle CPU Ticks: " << idleCPUTicks;
-    std::cout << "\nActive CPU Ticks: " << placeholder;
+    std::cout << "\nActive CPU Ticks: " << activeCPUTicks;
     std::cout << "\nTotal CPU Ticks: " << idleCPUTicks + activeCPUTicks;
 
     std::cout << "Paging Stats:\n";
@@ -446,6 +450,8 @@ int main() {
                 }
             } else if (cmd == "process-smi") {
                 process_smi(scheduler, memoryAllocator, config);
+            } else if (cmd == "vmstat") {
+                vmstat(scheduler, config)
             } else if (cmd == "report-util") {
                 report_util(scheduler, config);
             } else if (cmd == "clear") {
