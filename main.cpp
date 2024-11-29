@@ -329,7 +329,6 @@ void vmstat(Scheduler* scheduler, Config& config, IMemoryAllocator* memoryAlloca
         numPagedOut = pagingAllocator->getPagesPagedOut();
     }
     
-
     std::cout << "===========================================\n";
     std::cout << "|                  VMSTAT                 |\n";
     std::cout << "===========================================\n";
