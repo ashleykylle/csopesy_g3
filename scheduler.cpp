@@ -5,7 +5,7 @@
 using namespace std;
 
 FCFSScheduler::FCFSScheduler(int cores, IMemoryAllocator& memoryAllocator)
-    : numCores(cores), processQueues(cores), isRunning(false), memoryAllocator(memoryAllocator) {}
+    : numCores(cores), processQueues(cores), isRunning(false), memoryAllocator(memoryAllocator), idleCPUTicks(0), activeCPUTicks(0) {}
 
 void FCFSScheduler::addProcess(Process* process, int core) {
     if (core >= 0 && core < numCores) {
@@ -16,6 +16,9 @@ void FCFSScheduler::addProcess(Process* process, int core) {
 }
 
 void FCFSScheduler::runScheduler(const Config& config, int& cpuCycles, IMemoryAllocator& memoryAllocator) {
+    idleCPUTicks.store(0, std::memory_order_relaxed);
+    activeCPUTicks.store(0, std::memory_order_relaxed);
+
     isRunning = true;
     auto coreFunction = [this, &config, &cpuCycles, &memoryAllocator](int coreId)  {
         while (isRunning) {
@@ -25,9 +28,9 @@ void FCFSScheduler::runScheduler(const Config& config, int& cpuCycles, IMemoryAl
                 lock_guard<mutex> guard(queueMutex);
                 if (!processQueues[coreId].empty()) {
                     currentProcess = processQueues[coreId].front();
-                    activeCPUTicks++;
+                    activeCPUTicks.fetch_add(1, std::memory_order_relaxed);
                 } else {
-                    idleCPUTicks++;
+                    idleCPUTicks.fetch_add(1, std::memory_order_relaxed);
                 }
             }
 
@@ -103,7 +106,7 @@ bool FCFSScheduler::schedulerRunning() const {
 }
 
 RoundRobinScheduler::RoundRobinScheduler(int cores, int quantum, IMemoryAllocator& memoryAllocator) 
-    : numCores(cores), quantumCycles(quantum), processQueues(cores), isRunning(false), memoryAllocator(memoryAllocator) {}
+    : numCores(cores), quantumCycles(quantum), processQueues(cores), isRunning(false), memoryAllocator(memoryAllocator), idleCPUTicks(0), activeCPUTicks(0) {}
 
 void RoundRobinScheduler::addProcess(Process* process, int core) {
     if (core >= 0 && core < numCores) {
@@ -114,6 +117,9 @@ void RoundRobinScheduler::addProcess(Process* process, int core) {
 }
 
 void RoundRobinScheduler::runScheduler(const Config& config, int& cpuCycles, IMemoryAllocator& memoryAllocator) {
+    idleCPUTicks.store(0, std::memory_order_relaxed);
+    activeCPUTicks.store(0, std::memory_order_relaxed);
+
     isRunning = true;
     auto coreFunction = [this, &config, &cpuCycles, &memoryAllocator](int coreId) {
         int quantumCycleCount = 0;
@@ -124,9 +130,9 @@ void RoundRobinScheduler::runScheduler(const Config& config, int& cpuCycles, IMe
                 lock_guard<mutex> guard(queueMutex);
                 if (!processQueues[coreId].empty()) {
                     currentProcess = processQueues[coreId].front();
-                    activeCPUTicks++;
+                    activeCPUTicks.fetch_add(1, std::memory_order_relaxed);
                 } else {
-                    idleCPUTicks++;
+                    idleCPUTicks.fetch_add(1, std::memory_order_relaxed);
                 }
             }
 
