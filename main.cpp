@@ -330,12 +330,12 @@ void vmstat(Scheduler* scheduler, Config& config) {
     std::cout << "\nUsed Memory: " << usedMemory << " KB";
     std::cout << "\nFree Memory: " << freeMemory << " KB";
 
-    std::cout << "CPU Stats:\n";
+    std::cout << "\n\nCPU Stats:";
     std::cout << "\nIdle CPU Ticks: " << idleCPUTicks;
     std::cout << "\nActive CPU Ticks: " << activeCPUTicks;
     std::cout << "\nTotal CPU Ticks: " << idleCPUTicks + activeCPUTicks;
 
-    std::cout << "Paging Stats:\n";
+    std::cout << "\n\nPaging Stats:";
     std::cout << "\nNum Paged In: " << placeholder;
     std::cout << "\nNum Paged Out: " << placeholder;
     std::cout << "\n=========================================\n";
@@ -451,7 +451,7 @@ int main() {
             } else if (cmd == "process-smi") {
                 process_smi(scheduler, memoryAllocator, config);
             } else if (cmd == "vmstat") {
-                vmstat(scheduler, config)
+                vmstat(scheduler, config);
             } else if (cmd == "report-util") {
                 report_util(scheduler, config);
             } else if (cmd == "clear") {

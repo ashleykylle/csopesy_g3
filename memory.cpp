@@ -168,7 +168,7 @@ void FlatMemoryAllocator::logMemoryStamp(int cycleNumber, size_t frame, Process*
 }
 
 PagingAllocator::PagingAllocator(size_t maxMemorySize)
-    : maxMemorySize(maxMemorySize), numFrames(maxMemorySize) {
+    : maxMemorySize(maxMemorySize), numFrames(maxMemorySize), pagesPagedIn(0), pagesPagedOut(0) {
         for (size_t i = 0; i < numFrames; ++i) {
             freeFrameList.push_back(i+1);
         }
@@ -226,6 +226,7 @@ size_t PagingAllocator::allocateFrames(size_t numFrames, Process* process) {
         frameMap[freeFrameList.back()] = process->getId();
         pageTable[i] = freeFrameList.back();
         freeFrameList.pop_back();
+        pagesPagedIn++;
     }
     process->storePageTable(pageTable);
     size_t frameIndex = pageTable.begin()->second;
@@ -245,6 +246,7 @@ void PagingAllocator::deallocateFrames(vector<size_t> frameIndices, Process* pro
 
     for (size_t i = 0; i < numFrames; ++i) {
         freeFrameList.push_back(frameIndices[i]);
+        pagesPagedOut++;
     }
 }
 
