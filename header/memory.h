@@ -56,6 +56,9 @@ private:
     vector<Process*> processesInMemory;
     mutex memoryMutex;
 
+    size_t pagesPagedIn;
+    size_t pagesPagedOut;
+
     size_t allocateFrames(size_t numFrames, Process* process);
     void deallocateFrames(vector<size_t> frameIndices, Process* process);
 
@@ -68,6 +71,9 @@ public:
     void* handleMemoryFull(Process* currentProcess) override;
     void logMemoryStamp(int cycleNumber, size_t frame, Process* process) override;
     // void visualizeMemory() const override;
+
+    size_t getPagesPagedIn() const { return pagesPagedIn; }
+    size_t getPagesPagedOut() const { return pagesPagedOut; }
 };
 
 #endif
