@@ -287,19 +287,21 @@ void process_smi(Scheduler* scheduler, IMemoryAllocator* memoryAllocator, Config
     cout << "--------------------------------------\n\n";
 }
 
-void vmstat(Scheduler* scheduler, Config& config) {
+void vmstat(Scheduler* scheduler, Config& config, IMemoryAllocator* memoryAllocator) {
     auto processQueues = scheduler->getProcessQueues();
     
-    int placeholder = 1;
     int usedMemory = 0;
     int totalMemory = 0;
     int freeMemory = 0;
+
     int idleCPUTicks = 0;
     int activeCPUTicks = 0;
+
     int numPagedIn = 0;
     int numPagedOut = 0;
 
     void* memory = nullptr;
+
     vector<Process*> runningProcesses;
 
     for (const auto& coreQueue : processQueues) {
@@ -321,6 +323,13 @@ void vmstat(Scheduler* scheduler, Config& config) {
     idleCPUTicks = scheduler->getIdleCPUTicks();
     activeCPUTicks = scheduler->getActiveCPUTicks();
 
+    PagingAllocator* pagingAllocator = dynamic_cast<PagingAllocator*>(memoryAllocator);
+    if (pagingAllocator) {
+        numPagedIn = pagingAllocator->getPagesPagedIn();
+        numPagedOut = pagingAllocator->getPagesPagedOut();
+    }
+    
+
     std::cout << "===========================================\n";
     std::cout << "|                  VMSTAT                 |\n";
     std::cout << "===========================================\n";
@@ -336,8 +345,8 @@ void vmstat(Scheduler* scheduler, Config& config) {
     std::cout << "\nTotal CPU Ticks: " << idleCPUTicks + activeCPUTicks;
 
     std::cout << "\n\nPaging Stats:";
-    std::cout << "\nNum Paged In: " << placeholder;
-    std::cout << "\nNum Paged Out: " << placeholder;
+    std::cout << "\nNum Paged In: " << numPagedIn;
+    std::cout << "\nNum Paged Out: " << numPagedOut;
     std::cout << "\n=========================================\n";
 }
 
@@ -451,7 +460,7 @@ int main() {
             } else if (cmd == "process-smi") {
                 process_smi(scheduler, memoryAllocator, config);
             } else if (cmd == "vmstat") {
-                vmstat(scheduler, config);
+                vmstat(scheduler, config, memoryAllocator);
             } else if (cmd == "report-util") {
                 report_util(scheduler, config);
             } else if (cmd == "clear") {
