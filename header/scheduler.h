@@ -26,8 +26,8 @@ public:
 class FCFSScheduler : public Scheduler {
 private:
     int numCores;
-    int idleCPUTicks;
-    int activeCPUTicks;
+    std::atomic<int> idleCPUTicks;
+    std::atomic<int> activeCPUTicks;
     vector<thread> coreThreads;
     vector<vector<Process*>> processQueues;
     vector<Process*> finishedProcesses;
@@ -52,8 +52,8 @@ class RoundRobinScheduler : public Scheduler {
 private:
     int numCores;
     int quantumCycles;
-    int idleCPUTicks;
-    int activeCPUTicks;
+    std::atomic<int> idleCPUTicks;
+    std::atomic<int> activeCPUTicks;
     vector<thread> coreThreads;
     vector<vector<Process*>> processQueues;
     vector<Process*> finishedProcesses;
