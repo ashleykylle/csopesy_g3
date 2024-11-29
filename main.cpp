@@ -247,7 +247,7 @@ void process_smi(Scheduler* scheduler, IMemoryAllocator* memoryAllocator, Config
             allProcesses.push_back(process);
         }
     }
-    
+    cout << coresUsed << "/" << config.numCpu << "\n";
     cpuUtilization = (coresUsed / config.numCpu) * 100;
     cout << "CPU-Util: " << cpuUtilization << "%\n";
 
@@ -270,6 +270,7 @@ void process_smi(Scheduler* scheduler, IMemoryAllocator* memoryAllocator, Config
     totalMemory = config.maxOverallMem * 1048.576;
     cout << "Memory Usage: " << usedMemory << "MiB / " << totalMemory << "MiB\n";
 
+    cout << usedMemory << "/" << totalMemory << "\n";
     memUtilization = (usedMemory / totalMemory) * 100;
     cout << "Memory Util: " << memUtilization << "%\n";
     cout << "\n--------------------------------------\n";
