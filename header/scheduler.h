@@ -44,8 +44,8 @@ public:
     vector<Process*> getFinishedProcesses() const override;
     vector<vector<Process*>> getProcessQueues() const override;
     bool schedulerRunning() const override;
-    int getIdleCPUTicks() const { return idleCPUTicks; }
-    int getActiveCPUTicks() const { return activeCPUTicks; }
+    int getIdleCPUTicks() const override;
+    int getActiveCPUTicks() const override;
 };
 
 class RoundRobinScheduler : public Scheduler {
@@ -70,8 +70,8 @@ public:
     vector<Process*> getFinishedProcesses() const override;
     vector<vector<Process*>> getProcessQueues() const override;
     bool schedulerRunning() const override;
-    int getIdleCPUTicks() const { return idleCPUTicks; }
-    int getActiveCPUTicks() const { return activeCPUTicks; }
+    int getIdleCPUTicks() const override;
+    int getActiveCPUTicks() const override;
 };
 
 #endif

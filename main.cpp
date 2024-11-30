@@ -80,13 +80,13 @@ void initialize(Config& config, Scheduler*& scheduler, IMemoryAllocator*& memory
         });
         schedulerThread.detach();
 
-        const char* folderName = "logs";
-        if (_mkdir(folderName) == 0) {
-            cout << "Logs folder created successfully.\n";
-        } else {
-            perror("Error creating folder");
-        }
-        folderName = "back_storage";
+        // const char* folderName = "logs";
+        // if (_mkdir(folderName) == 0) {
+        //     cout << "Logs folder created successfully.\n";
+        // } else {
+        //     perror("Error creating folder");
+        // }
+        const char* folderName = "back_storage";
 
         if (_mkdir(folderName) == 0) {
             cout << "Back storage folder created successfully.\n";
@@ -205,7 +205,7 @@ void scheduler_test(Scheduler* scheduler, Config& config, int& cpuCycles) {
     schedulerRunning = true;
 
     while (schedulerRunning) {
-        if (cpuCycles % config.batchProcessFreq == 0) {
+        if (cpuCycles % (config.batchProcessFreq * 1000) == 0) {
             int assignedCore = currentCore++ % config.numCpu;
             string processName = "P" + to_string(processId);
             int numInstructions = config.minIns + (rand() % (config.maxIns - config.minIns + 1));
@@ -247,7 +247,6 @@ void process_smi(Scheduler* scheduler, IMemoryAllocator* memoryAllocator, Config
             allProcesses.push_back(process);
         }
     }
-    cout << coresUsed << "/" << config.numCpu << "\n";
     cpuUtilization = (coresUsed / config.numCpu) * 100;
     cout << "CPU-Util: " << cpuUtilization << "%\n";
 
@@ -265,12 +264,8 @@ void process_smi(Scheduler* scheduler, IMemoryAllocator* memoryAllocator, Config
         }
     }
 
-    // multiply by 1048.576 to convert from KB to MiB
-    usedMemory = usedMemory * 1048.576;
-    totalMemory = config.maxOverallMem * 1048.576;
-    cout << "Memory Usage: " << usedMemory << "MiB / " << totalMemory << "MiB\n";
-
-    cout << usedMemory << "/" << totalMemory << "\n";
+    totalMemory = config.maxOverallMem;
+    cout << "Memory Usage: " << usedMemory << "KB / " << totalMemory << "KB\n";
     memUtilization = (usedMemory / totalMemory) * 100;
     cout << "Memory Util: " << memUtilization << "%\n";
     cout << "\n--------------------------------------\n";
@@ -279,10 +274,9 @@ void process_smi(Scheduler* scheduler, IMemoryAllocator* memoryAllocator, Config
         return a->getId() < b->getId();
         });
 
-
     for (Process* process : runningProcesses) {
-        memUsage = process->getMemoryRequired() * 1048.576;
-        cout << process->getName() << " " << memUsage << "MiB\n";
+        memUsage = process->getMemoryRequired();
+        cout << process->getName() << " " << memUsage << "KB\n";
     }
     cout << "--------------------------------------\n\n";
 }

@@ -16,8 +16,8 @@ void FCFSScheduler::addProcess(Process* process, int core) {
 }
 
 void FCFSScheduler::runScheduler(const Config& config, int& cpuCycles, IMemoryAllocator& memoryAllocator) {
-    idleCPUTicks.store(0, std::memory_order_relaxed);
-    activeCPUTicks.store(0, std::memory_order_relaxed);
+    idleCPUTicks.store(0, memory_order_relaxed);
+    activeCPUTicks.store(0, memory_order_relaxed);
 
     isRunning = true;
     auto coreFunction = [this, &config, &cpuCycles, &memoryAllocator](int coreId)  {
@@ -28,9 +28,9 @@ void FCFSScheduler::runScheduler(const Config& config, int& cpuCycles, IMemoryAl
                 lock_guard<mutex> guard(queueMutex);
                 if (!processQueues[coreId].empty()) {
                     currentProcess = processQueues[coreId].front();
-                    activeCPUTicks.fetch_add(1, std::memory_order_relaxed);
+                    activeCPUTicks.fetch_add(1, memory_order_relaxed);
                 } else {
-                    idleCPUTicks.fetch_add(1, std::memory_order_relaxed);
+                    idleCPUTicks.fetch_add(1, memory_order_relaxed);
                 }
             }
 
@@ -105,6 +105,14 @@ bool FCFSScheduler::schedulerRunning() const {
     return isRunning;
 }
 
+int FCFSScheduler::getIdleCPUTicks() const {
+    return idleCPUTicks;
+}
+
+int FCFSScheduler::getActiveCPUTicks() const {
+    return activeCPUTicks;
+}
+
 RoundRobinScheduler::RoundRobinScheduler(int cores, int quantum, IMemoryAllocator& memoryAllocator) 
     : numCores(cores), quantumCycles(quantum), processQueues(cores), isRunning(false), memoryAllocator(memoryAllocator), idleCPUTicks(0), activeCPUTicks(0) {}
 
@@ -117,8 +125,8 @@ void RoundRobinScheduler::addProcess(Process* process, int core) {
 }
 
 void RoundRobinScheduler::runScheduler(const Config& config, int& cpuCycles, IMemoryAllocator& memoryAllocator) {
-    idleCPUTicks.store(0, std::memory_order_relaxed);
-    activeCPUTicks.store(0, std::memory_order_relaxed);
+    idleCPUTicks.store(0, memory_order_relaxed);
+    activeCPUTicks.store(0, memory_order_relaxed);
 
     isRunning = true;
     auto coreFunction = [this, &config, &cpuCycles, &memoryAllocator](int coreId) {
@@ -130,9 +138,9 @@ void RoundRobinScheduler::runScheduler(const Config& config, int& cpuCycles, IMe
                 lock_guard<mutex> guard(queueMutex);
                 if (!processQueues[coreId].empty()) {
                     currentProcess = processQueues[coreId].front();
-                    activeCPUTicks.fetch_add(1, std::memory_order_relaxed);
+                    activeCPUTicks.fetch_add(1, memory_order_relaxed);
                 } else {
-                    idleCPUTicks.fetch_add(1, std::memory_order_relaxed);
+                    idleCPUTicks.fetch_add(1, memory_order_relaxed);
                 }
             }
 
@@ -225,4 +233,12 @@ vector<vector<Process*>> RoundRobinScheduler::getProcessQueues() const {
 
 bool RoundRobinScheduler::schedulerRunning() const {
     return isRunning;
+}
+
+int RoundRobinScheduler::getIdleCPUTicks() const {
+    return idleCPUTicks;
+}
+
+int RoundRobinScheduler::getActiveCPUTicks() const {
+    return activeCPUTicks;
 }

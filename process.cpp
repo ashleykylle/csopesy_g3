@@ -8,7 +8,7 @@ using namespace std;
 
 Process::Process(const string& processName, int processId, int numInstructions, size_t memoryRequired, vector<int> pageIndices)
     : name(processName), id(processId), totalInstructions(numInstructions), remainingInstructions(numInstructions),
-    isFinished(false), memoryRequired(memoryRequired), memory(nullptr), pageIndices(pageIndices), pageTable() {}
+    isFinished(false), memoryRequired(memoryRequired), memory(nullptr), pageIndices(pageIndices), pageTable(), isInBackStorage(false) {}
 
 void Process::executeInstruction() {
     if (remainingInstructions > 0) {
@@ -39,6 +39,10 @@ void* Process::getAllocatedMemory() const {
 
 bool Process::hasFinished() const {
     return remainingInstructions == 0;
+}
+
+bool Process::processsInBackStorage() const {
+    return isInBackStorage;
 }
 
 string Process::getName() const {
@@ -82,6 +86,7 @@ const unordered_map<size_t, size_t>& Process::getPageTable() const {
 }
 
 void Process::storeToBackStorage(const string& filename) {
+    isInBackStorage = true;
     ofstream file(filename);
     if (file.is_open()) {
         file << "-----------------------------------" << endl;
@@ -97,4 +102,8 @@ void Process::storeToBackStorage(const string& filename) {
     } else {
         cerr << "Error: Unable to open file for back storage." << endl;
     }
+}
+
+void Process::removeFromBackStorage() {
+    isInBackStorage = false;
 }
