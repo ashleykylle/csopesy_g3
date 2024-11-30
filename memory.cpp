@@ -96,8 +96,8 @@ void* FlatMemoryAllocator::handleMemoryFull(Process* currentProcess) {
             // Step 4: If allocation is successful, end the loop and perform back storing
             if (memory) {
                 notAllocated = false;
-                // string filename = "back_storage/" + oldestProcess->getName() + ".txt";
-                // oldestProcess->storeToBackStorage(filename);
+                string filename = "back_storage/" + oldestProcess->getName() + ".txt";
+                oldestProcess->storeToBackStorage(filename);
             }
         }
     }
@@ -307,8 +307,8 @@ void* PagingAllocator::handleMemoryFull(Process* currentProcess) {
                     auto it = find(processesInMemory.begin(), processesInMemory.end(), oldestProcess);
                     if (it != processesInMemory.end()) {
                         oldestProcess->storeMemory(nullptr);
-                        // string filename = "back_storage/" + oldestProcess->getName() + ".txt";
-                        // oldestProcess->storeToBackStorage(filename);
+                        string filename = "back_storage/" + oldestProcess->getName() + ".txt";
+                        oldestProcess->storeToBackStorage(filename);
                         processesInMemory.erase(it);
                     }
                 }
@@ -331,8 +331,8 @@ void* PagingAllocator::handleMemoryFull(Process* currentProcess) {
                     // At least 1 page is removed from memory
                     if (oldestProcess->getNumPages() != oldestProcess->getPageTable().size()) {
                         oldestProcess->storeMemory(nullptr);
-                        // string filename = "back_storage/" + oldestProcess->getName() + ".txt";
-                        // oldestProcess->storeToBackStorage(filename);
+                        string filename = "back_storage/" + oldestProcess->getName() + ".txt";
+                        oldestProcess->storeToBackStorage(filename);
                     }
                 }
             }
